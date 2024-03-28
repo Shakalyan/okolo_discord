@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  database:
+    image: postgres:latest
+    container_name: 'od_database'
+    environment:
+      POSTGRES_DB: 'od_database'
+      POSTGRES_USER: 'shakalyan'
+      POSTGRES_PASSWORD: '123'
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/db_init.sql
+    ports:
+      - '5432:5432'

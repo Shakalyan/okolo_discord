@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS account;
+CREATE TABLE account (
+    id UUID PRIMARY KEY,
+    login VARCHAR(256) UNIQUE NOT NULL,
+    password VARCHAR(256) NOT NULL,
+    salt VARCHAR(256) NOT NULL
+);
