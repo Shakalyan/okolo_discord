@@ -1,4 +1,5 @@
 from flask import Flask, request, Response
+from flask_cors import CORS
 from datamanage import DataManager
 import bcrypt, base64
 import jwt
@@ -7,6 +8,8 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 dm = DataManager()
+cors = CORS(app, resources={r"*": {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 with open(".keys/id_rsa", 'r') as f:
     prv_key = serialization.load_ssh_private_key(f.read().encode(), b'')
@@ -41,12 +44,18 @@ def signup():
     data = request.json
     login = data['login']
     password = data['password']
+
+    if len(login) < 3:
+        return Response("SHORT_LOGIN", status=400)
+    
+    if len(password) < 5:
+        return Response("SHORT_PASSWORD", status=400)
     
     result = dm.userRepo.findByLogin(login)
     if result == -1:
         return Response(status=500)
     elif result != None:
-        return Response("Login is used", status=400)
+        return Response("LOGIN_IS_USED", status=400)
 
     salt = bcrypt.gensalt()
     hashed_pw = bcrypt.hashpw(password.encode('utf-8'), salt)
@@ -71,7 +80,7 @@ def signin():
     if account == -1:
         return Response(status=500)
     if account == None:
-        return Response("User does not exist", status=400)
+        return Response(status=400)
     
     print(account.password)
     hashed_pw = base64.b64decode(account.password.encode('utf-8'))
@@ -92,4 +101,4 @@ def getAllUsers():
     
 if dm != None:
     print(dm)
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)

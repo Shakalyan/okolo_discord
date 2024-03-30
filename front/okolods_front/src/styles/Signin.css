@@ -1,0 +1,8 @@
+#signin_container {
+    width: 400px;
+    padding: 30px;
+    margin: 0 auto;
+    margin-top: 200px;
+    /* background-color: white; */
+    border-style: ridge;
+}

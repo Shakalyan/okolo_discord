@@ -1,3 +1,8 @@
+* {
+  background-color: #242424;
+  color: white;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -10,4 +15,39 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.input_df {
+  border-style: solid;
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+}
+
+.input_incs_df {
+  margin: 0px;
+  padding: 0px;
+}
+
+.input_dsc_df {
+  font-size: 11px;
+  color: red;
+  margin: 0;
+}
+
+.button_df {
+  background-color: red;
+}
+
+.mg-0 {
+  margin: 0;
+  padding: 0;
+}
+
+.redtext {
+  color: red;
+}
+
+.greentext {
+  color: green;
 }
