@@ -41,3 +41,30 @@ export function api_signup(login, password) {
 export function api_ping() {
     return sendQuery(makeUrl('/ping'), 'GET');
 }
+
+export function api_createChat(name, isGroup, members) {
+    let body = {
+        name: name,
+        is_group: isGroup,
+        members: members
+    };
+    return sendJSONQuery(makeUrl('/chat'), 'POST', body);
+}
+
+export function wsapi_createChat(ws, name, isGroup, members) {
+    let body = {
+        type: 'chat',
+        subtype: 'new',
+        data: {
+            name: name,
+            isGroup: isGroup,
+            members: members
+        }
+    };
+    ws.send(JSON.stringify(body));
+}
+
+export function api_getAccountId(login) {
+    let url = makeUrl(`/account?login=${login}`)
+    return sendQuery(url, 'GET');
+}

@@ -1,0 +1,46 @@
+#main_container {
+    display:flex;
+}
+
+#main_left_panel {
+    height: 100vh;
+    width: 200px;
+    /* border-right: solid 1px; */
+}
+
+.nav-link.active {
+    color: #242424 !important;
+    background-color: white !important;
+}
+
+.nav-link {
+    margin: 0;
+    color: white !important;
+    background-color: #242424 !important;
+}
+
+.mstab {
+    padding: 5px;
+}
+
+.mstab:hover {
+    background-color: white;
+}
+
+.mstab:hover .mstab-text {
+    color: #242424;
+}
+
+.mstab-text {
+    background-color: transparent;
+    margin: 0;
+}
+
+#main_right_area {
+    flex-grow: 1;
+    padding: 5px;
+}
+
+#new_chat_form {
+    width: 500px;
+}

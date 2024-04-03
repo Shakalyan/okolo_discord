@@ -2,7 +2,7 @@ import '../styles/App.css';
 import Button from 'react-bootstrap/Button'
 import Signin from './Signin.jsx'
 import Signup from './Signup.jsx'
-import StartPage from './StartPage.jsx';
+import MainPage from './MainPage.jsx';
 import {BrowserRouter as Router, Route, Routes} from 'react-router-dom'
 
 function App() {
@@ -11,7 +11,7 @@ function App() {
             <Routes>
                 <Route path="/signin" Component={Signin} />
                 <Route path="/signup" Component={Signup} />
-                <Route path="/start" Component={StartPage} />
+                <Route path="/main" Component={MainPage} />
             </Routes>
         </Router>        
     );

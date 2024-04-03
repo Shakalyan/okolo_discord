@@ -3,6 +3,6 @@ import { langReducer } from './slices/langSlice.js';
 
 export default configureStore({
   reducer: {
-    lang: langReducer
+    lang: langReducer,
   },
 });

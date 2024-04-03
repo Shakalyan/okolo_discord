@@ -33,7 +33,10 @@ export default function Signin() {
         api_signin(login, password).then((response) => {
             console.log(response.status);
             if (response.status == 200) {
-                navigate('/start');
+                response.text().then((token) => {
+                    localStorage.setItem('token', token);
+                    navigate('/main');                    
+                });                
             } else {
                 let text = "";
                 resultTextArea.current.className = "redtext";

@@ -56,12 +56,24 @@ class Account:
         self.salt = query_result[3]
 
 
+class Chat:
+    id: uuid.UUID
+    name: str
+    isGroup: bool
+
+    def __init__(self, query_result):
+        self.id = query_result[0]
+        self.name = query_result[1]
+        self.isGroup = query_result[2]
+
+
 class DataManager:
     def __init__(self):
         try:
             self.connection = psycopg2.connect("dbname='od_database' user='shakalyan' host='localhost' password='123'")
             self.connection.autocommit = True
-            self.userRepo = AccountRepo(self.connection)
+            self.accountRepo = AccountRepo(self.connection)
+            self.chatRepo = ChatRepo(self.connection)
         except:
             print("Failed to connect to database")
             raise BaseException()
@@ -86,3 +98,37 @@ class AccountRepo:
         if res == -1 or res == None:
             return res
         return Account(res)
+
+    def findById(self, id):
+        res = _eq_one(self.conn, f"SELECT * FROM account WHERE id = '{id}'")
+        if res == -1 or res == None:
+            return res
+        return Account(res)
+
+
+class ChatRepo:
+    def __init__(self, conn):
+        self.conn = conn
+    
+    def getAll(self):
+        return _eq_all(self.conn, 'SELECT * FROM chat')
+    
+    def insert(self, name, isGroup):
+        return _eq_none(self.conn, f"INSERT INTO chat VALUES('{uuid.uuid4()}', '{name}',  {isGroup})")
+    
+    def createNew(self, name, isGroup, members):
+        chatId = uuid.uuid4()
+        result = _eq_none(self.conn, f"INSERT INTO chat VALUES('{chatId}', '{name}',  {isGroup})")
+        if result == -1:
+            return -1
+        
+        for member in members:
+            result = _eq_none(self.conn, f"INSERT INTO chat_account_map VALUES('{chatId}', '{member}')")
+            if result == -1:
+                return -1
+        return 0
+
+    
+    def findAllByAccountId(self, accountId):
+        result = _eq_all(self.conn, f"SELECT chat_id, chat.name FROM chat_account_map JOIN chat ON chat_account_map.chat_id = chat.id WHERE account_id = '{accountId}'")
+        return list(map(lambda row: Chat(row), result))

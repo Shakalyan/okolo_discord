@@ -12,7 +12,6 @@ export const langSlice = createSlice({
   },
 })
 
-// Action creators are generated for each case reducer function
 export const { set } = langSlice.actions;
 
 export let langReducer = langSlice.reducer;
