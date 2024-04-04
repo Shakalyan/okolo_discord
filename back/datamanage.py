@@ -65,11 +65,13 @@ class Chat:
         self.id = query_result[0]
         self.name = query_result[1]
         self.isGroup = query_result[2]
+        self.members = []
 
 
 class DataManager:
     def __init__(self):
         try:
+            self.connection = None
             self.connection = psycopg2.connect("dbname='od_database' user='shakalyan' host='localhost' password='123'")
             self.connection.autocommit = True
             self.accountRepo = AccountRepo(self.connection)
@@ -126,9 +128,25 @@ class ChatRepo:
             result = _eq_none(self.conn, f"INSERT INTO chat_account_map VALUES('{chatId}', '{member}')")
             if result == -1:
                 return -1
-        return 0
+        return chatId
 
-    
     def findAllByAccountId(self, accountId):
-        result = _eq_all(self.conn, f"SELECT chat_id, chat.name FROM chat_account_map JOIN chat ON chat_account_map.chat_id = chat.id WHERE account_id = '{accountId}'")
-        return list(map(lambda row: Chat(row), result))
+        result = _eq_all(self.conn, f"SELECT chat.id, chat.name, chat.is_group FROM chat_account_map JOIN chat ON chat_account_map.chat_id = chat.id WHERE account_id = '{accountId}'")
+        if result == -1:
+            return -1
+        
+        chats = list(map(lambda row: Chat(row), result))
+        for chat in chats:
+            members = _eq_all(self.conn, f"SELECT account.id, account.login FROM chat_account_map JOIN account ON chat_account_map.account_id = account.id WHERE chat_account_map.chat_id = '{chat.id}'") 
+            if members == -1:
+                return -1
+            for member in members:
+                chat.members.append({'id': member[0], 'login': member[1]})
+
+        return chats
+    
+    def findById(self, chatId):
+        result = _eq_one(self.conn, f"SELECT * FROM chat WHERE id = {chatId}")
+        if result == -1:
+            return -1
+        return Chat(result)

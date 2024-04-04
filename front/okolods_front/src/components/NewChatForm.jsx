@@ -4,7 +4,7 @@ import ComplexInput from './general/ComplexInput.jsx';
 import ListGroup from 'react-bootstrap/ListGroup';
 import Button from "react-bootstrap/esm/Button";
 import { useRef, useState } from "react";
-import { api_getAccountId, api_createChat, wsapi_createChat } from "../api.js";
+import { api_getAccountId, wsapi_createChat } from "../api.js";
 
 export default function NewChatForm(props) {
 
@@ -18,7 +18,6 @@ export default function NewChatForm(props) {
     const [memberIdsList, setMemberIdsList] = useState([]);
 
     function checkBoxChange(event) {
-        console.log(checkBox.current.checked);
         if (checkBox.current.checked) {
             nameInput.current.disabled = false;
         } else {
@@ -33,6 +32,11 @@ export default function NewChatForm(props) {
             
             console.log(checkBox.current.disabled);
 
+            if (login == props.accountData.login) {
+                setMemberDsc('You cannot add yourself');
+                return;
+            }
+
             if (!checkBox.current.checked && memberLoginsList.length > 0) {
                 setMemberDsc('You can add only one user in non-group chat');
                 return;
@@ -46,7 +50,6 @@ export default function NewChatForm(props) {
             api_getAccountId(login).then((response) => {
                 if (response.status == 200) {
                     response.text().then((id) => {
-                        console.log(id);
                         setMemberDsc('');
                         setMemberLoginsList([...memberLoginsList, login]);
                         setMemberIdsList([...memberIdsList, id]);
@@ -73,7 +76,6 @@ export default function NewChatForm(props) {
             setMemberDsc('Add at least one member');
             return;
         }
-        console.log(props.ws);
         wsapi_createChat(props.ws, name, isGroup, memberIdsList);
     }
 

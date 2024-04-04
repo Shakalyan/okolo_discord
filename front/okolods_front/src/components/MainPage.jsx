@@ -4,18 +4,25 @@ import Tabs from 'react-bootstrap/Tabs';
 import '../styles/MainPage.css'
 import MsTab from "./general/MsTab.jsx";
 import Button from "react-bootstrap/esm/Button.js";
-import { api_createChat } from "../api.js";
+import { api_auth_accountEcho, api_auth_getAccountChats } from "../api.js";
 import NewChatForm from "./NewChatForm.jsx";
 import { useSelector, useDispatch } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export default function MainPage() {
 
     const [ws, setWs] = useState(null);
+    const chatListRef = useRef([]);
     const [chatList, setChatList] = useState([]);
+    const [accountData, setAccountData] = useState(null);
 
-    useEffect(() => {
-        let socket = new WebSocket(`ws://localhost:5000/ws/${localStorage.getItem('token')}`);
+    function appendToChatList(chat) {
+        chatListRef.current.push(chat);
+        setChatList([...chatListRef.current]);
+    }
+
+    function initWebSocket() {
+        let socket = new WebSocket(`ws://192.168.1.113:5000/ws/${localStorage.getItem('token')}`);
         socket.onopen = (event) => {
             console.log("open socket");
         };
@@ -24,15 +31,35 @@ export default function MainPage() {
             console.log(msg);
             
             if (msg.type == 'chat') {
-                if (msg.type == 'new') {
-                    
+                if (msg.subtype == 'new') {
+                    appendToChatList(msg.data);
                 }
             }
-
-
         };
-        console.log("INIT SOCKET EPTA NAHUY");
         setWs(socket);
+    }
+
+    function loadInitialData() {
+        api_auth_accountEcho(localStorage.getItem('token')).then((response) => {
+            if (response.status == 200) {
+                response.json().then((json) => {
+                    setAccountData(json);
+                })
+            }
+        })
+        api_auth_getAccountChats(localStorage.getItem('token')).then((response) => {
+            if (response.status == 200) {
+                response.json().then((json) => {
+                    setChatList(json);
+                    chatListRef.current = json;
+                });
+            }
+        });
+    }
+
+    useEffect(() => {
+        initWebSocket();
+        loadInitialData();
     }, []);
 
     function newChatClick(event) {
@@ -50,7 +77,7 @@ export default function MainPage() {
                     <Tab eventKey="messages" title="Messages">
                         <Stack>
                             <Button variant='dark' size='sm' onClick={newChatClick}>New</Button>
-                            {chatList.map((chat) => <MsTab text={chat.name}/>)}
+                            {chatList.map((chat) => <MsTab key={chat.id} text={chat.name}/>)}
                         </Stack>
                     </Tab>
                     <Tab eventKey="servers" title="Servers">
@@ -59,7 +86,7 @@ export default function MainPage() {
                 </Tabs>
             </div>
             <div id="main_right_area">
-                <NewChatForm ws={ws}/>
+                <NewChatForm ws={ws} accountData={accountData}/>
             </div>
         </div>
     );

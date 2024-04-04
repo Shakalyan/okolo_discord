@@ -30,10 +30,11 @@ class WsMessage:
         self.data = json['data']
 
 
-def jwt_create(account_id):
+def jwt_create(account_id, login):
     expiration = datetime.utcnow() + timedelta(hours=24)
     payload = {
-        'account_id': account_id,
+        'accountId': account_id,
+        'login': login,
         'exp': expiration
     }
     return jwt.encode(payload, prv_key, 'RS256')
@@ -97,7 +98,7 @@ def signin():
     hashed_pw = base64.b64decode(account.password.encode('utf-8'))
 
     if bcrypt.checkpw(password.encode('utf-8'), hashed_pw):
-        token = jwt_create(account.id)
+        token = jwt_create(account.id, login)
         return Response(token, status=200)
     else:
         return Response(status=401)
@@ -126,16 +127,40 @@ def getAccountId():
         return Response(account.id, status=200)
 
 
-@app.route('/chat', methods=['POST'])
-def createNewChat():
-    name = request.json['name']
-    isGroup = request.json['is_group']
-    members = request.json['members']
+@app.route('/chats')
+def getAllChats():
+    token = request.args.get('token')
+    auth = jwt_decode(token)
+    if not auth:
+        return Response(status=401)
 
-    result = dm.chatRepo.createNew(name, isGroup, members)
-    if result == -1:
+    accountId = auth['accountId']
+
+    chats = dm.chatRepo.findAllByAccountId(accountId)
+    if chats == -1:
         return Response(status=500)
-    return Response(status=200)
+    
+    for chat in chats:
+        if not chat.isGroup:
+            if chat.members[0]['id'] == accountId:
+                chat.name = chat.members[1]['login']
+            else:
+                chat.name = chat.members[0]['login']
+
+    return json.dumps(chats, default=lambda o: o.__dict__)
+
+
+@app.route('/account/echo')
+def accountEcho():
+    token = request.args.get('token')
+    auth = jwt_decode(token)
+    if not auth:
+        return Response(status=401)
+    accountData = {
+        'id': auth['accountId'],
+        'login': auth['login']
+    }
+    return accountData
 
 
 @sock.route('/ws/<token>')
@@ -144,10 +169,10 @@ def ws_connect(ws: Server, token):
     if jwt_data is None:
         return
     
-    account_id = jwt_data['account_id']
-    if account_id in sessions:
-        sessions[account_id].close()
-    sessions[account_id] = ws
+    accountId = jwt_data['accountId']
+    if accountId in sessions:
+        sessions[accountId].close()
+    sessions[accountId] = ws
     print(sessions)
 
     while True:
@@ -161,21 +186,24 @@ def ws_connect(ws: Server, token):
             if type == 'chat':
                 if subtype == 'new':
                     members = data['members']
-                    members.append(account_id)
-                    result = dm.chatRepo.createNew(data['name'], data['isGroup'], members)
-                    if result:
-                        return
+                    members.append(accountId)
+                    chatId = dm.chatRepo.createNew(data['name'], data['isGroup'], members)
+                    if chatId == -1:
+                        print('DATABASE FAILURE')
+                        continue 
+
+                    msg['data']['id'] = str(chatId)
 
                     if not data['isGroup']:
                         member1 = dm.accountRepo.findById(members[0])
                         member2 = dm.accountRepo.findById(members[1])
                         
                         if member1.id in sessions:
-                            msg['name'] = member2.login
+                            msg['data']['name'] = member2.login
                             sessions[member1.id].send(json.dumps(msg))
                         
                         if member2.id in sessions:
-                            msg['name'] = member1.login
+                            msg['data']['name'] = member1.login
                             sessions[member2.id].send(json.dumps(msg))
 
                     else:
@@ -184,7 +212,7 @@ def ws_connect(ws: Server, token):
                                 sessions[member].send(json.dumps(msg))
 
         except ConnectionClosed:
-            del sessions[jwt_data['account_id']]
+            del sessions[jwt_data['accountId']]
             print('connection closed')
             raise ConnectionClosed        
     

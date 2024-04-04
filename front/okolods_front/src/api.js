@@ -1,8 +1,7 @@
-export const backendHost = "http://127.0.0.1:5000";
+export const backendHost = "http://192.168.1.113:5000";
 
 export function makeUrl(endpoint) {
     let url = `${backendHost}${endpoint}`;
-    console.log(url);
     return url;
 }
 
@@ -42,13 +41,12 @@ export function api_ping() {
     return sendQuery(makeUrl('/ping'), 'GET');
 }
 
-export function api_createChat(name, isGroup, members) {
-    let body = {
-        name: name,
-        is_group: isGroup,
-        members: members
-    };
-    return sendJSONQuery(makeUrl('/chat'), 'POST', body);
+export function api_auth_getAccountChats(token) {
+    return sendQuery(makeUrl(`/chats?token=${token}`), 'GET');
+}
+
+export function api_auth_accountEcho(token) {
+    return sendQuery(makeUrl(`/account/echo?token=${token}`), 'GET');
 }
 
 export function wsapi_createChat(ws, name, isGroup, members) {
