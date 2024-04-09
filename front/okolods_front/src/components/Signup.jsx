@@ -14,10 +14,10 @@ import { CONST_STRS } from '../strs.js'
 
 export default function Signup() {
 
-    let loginInput = React.createRef();
-    let passwordInput = React.createRef();
-    let repeatPasswordInput = React.createRef();
-    let resultTextArea = React.createRef();
+    let loginInput = React.useRef();
+    let passwordInput = React.useRef();
+    let repeatPasswordInput = React.useRef();
+    let resultTextArea = React.useRef();
 
     let navigate = useNavigate();
     let lang = useSelector((state) => state.lang.value);

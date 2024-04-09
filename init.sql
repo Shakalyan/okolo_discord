@@ -48,15 +48,15 @@ CREATE TABLE server_account_map (
 );
 
 DROP TABLE IF EXISTS text_channel;
-CREATE TABLE text_channel {
+CREATE TABLE text_channel (
     id UUID PRIMARY KEY,
     server_id UUID NOT NULL,
-    name VARCHAR
-};
+    name VARCHAR NOT NULL
+);
 
 DROP TABLE IF EXISTS voice_channel;
-CREATE TABLE voice_channel {
+CREATE TABLE voice_channel (
     id UUID PRIMARY KEY,
     server_id UUID NOT NULL,
-    name VARCHAR
-};
+    name VARCHAR NOT NULL
+);

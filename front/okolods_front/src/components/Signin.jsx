@@ -16,9 +16,9 @@ export default function Signin() {
 
     const lang = useSelector((store) => store.lang.value);
 
-    let loginInput = React.createRef();
-    let passwordInput = React.createRef();
-    let resultTextArea = React.createRef();
+    let loginInput = React.useRef();
+    let passwordInput = React.useRef();
+    let resultTextArea = React.useRef();
     let navigate = useNavigate();
 
     const [resultText, setResultText] = useState('');

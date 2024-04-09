@@ -68,6 +68,18 @@ export function api_getAccountServers() {
     return sendQuery(makeUrl(`/servers?token=${token}`))
 }
 
+export function api_getServerById(serverId) {
+    let token = localStorage.getItem('token')
+    let url = makeUrl(`/server?serverId=${serverId}&token=${token}`)
+    return sendQuery(url)
+}
+
+export function api_getTextChannelMessages(textChannelId) {
+    let token = localStorage.getItem('token')
+    let url = makeUrl(`/server/messages?textChannelId=${textChannelId}&token=${token}`)
+    return sendQuery(url);
+}
+
 export function wsapi_createChat(ws, name, isGroup, members) {
     let body = {
         type: 'chat',

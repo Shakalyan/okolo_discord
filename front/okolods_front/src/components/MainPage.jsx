@@ -1,10 +1,10 @@
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import '../styles/MainPage.css'
-import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, backendHost } from "../api.js";
+import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, api_getServerById, api_getTextChannelMessages, backendHost } from "../api.js";
 import NewChatForm from "./NewChatForm.jsx";
 import { NewServerForm } from './NewServerForm.jsx';
-import { useEffect, useState, useRef, createRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import Chat from "./chat/Chat.jsx";
 import { MsList } from "./main/MsList.jsx";
 import { Server } from './server/Server.jsx';
@@ -19,16 +19,19 @@ export default function MainPage() {
 
     const serverListRef = useRef([]);
     const [serverList, setServerList] = useState([]);
+    const serverDataRef = useRef({});
+    const [serverData, setServerData] = useState({});
 
     const [accountData, setAccountData] = useState(null);
 
     const [chosenChatId, setChosenChatId] = useState('');
     const [chosenServerId, setChosenServerId] = useState('');
+    const chosenTextChannelId = useRef('');
 
     const messageListRef = useRef([]);
     const [messageList, setMessageList] = useState([]);
 
-    const contextMenu = createRef();
+    const contextMenu = useRef();
     const [contextMenuActions, setContextMenuActions] = useState([]);
 
     const RenderedComponent = {
@@ -36,7 +39,7 @@ export default function MainPage() {
         Chat: 1,
         NewChatForm: 2,
         NewServerForm: 3,
-        Server: 4
+        Server: 4,
     };
     const [renderedComponent, _setRenderedComponent] = useState(RenderedComponent.None);
     let renderedComponentInfo = useRef({type: RenderedComponent.None});
@@ -64,7 +67,30 @@ export default function MainPage() {
 
     function serverTabClick(event, id) {
         setChosenServerId(id);
-        setRenderedComponent(RenderedComponent.Server, {id: id});
+        api_getServerById(id).then((response) => {
+            if (response.status == 200) {
+                response.json().then((json) => {
+                    console.log(json);
+                    serverDataRef.current = json;
+                    setServerData(json);
+                    setRenderedComponent(RenderedComponent.Server, {id: id});
+                })
+            }
+        })
+    }
+
+    function textChannelTabClick(event, id) {
+        chosenTextChannelId.current = id;
+        api_getTextChannelMessages(id).then((response) => {
+            if (response.status == 200) {
+                response.json().then((json) => {
+                    console.log(json);
+                    setRenderedComponent(RenderedComponent.Server, {channel: "text", id: id});
+                    setMessageList(json);
+                    messageListRef.current = json;
+                })
+            }
+        })
     }
 
     function appendToChatList(chat) {
@@ -106,6 +132,21 @@ export default function MainPage() {
             else if (msg.type == 'server') {
                 if (msg.subtype == 'new') {
                     appendToServerList(msg.data);
+                }
+                else if (msg.subtype == 'newVoiceChannel') {
+                    serverDataRef.current.voiceChannels.push(msg.data);
+                    setServerData({...serverDataRef.current});
+                }
+                else if (msg.subtype == 'newTextChannel') {
+                    serverDataRef.current.textChannels.push(msg.data);
+                    setServerData({...serverDataRef.current});
+                }
+                else if (msg.subtype == 'newMessage') {
+                    if (renderedComponentInfo.current.type == RenderedComponent.Server &&
+                        renderedComponentInfo.current.info.channel == 'text' &&
+                        renderedComponentInfo.current.info.id == msg.data.chatId) {
+                            appendToMessageList(msg.data);
+                    }                    
                 }
             }
         };
@@ -180,10 +221,24 @@ export default function MainPage() {
                 </Tabs>
             </div>
             <div id="main_right_area">
-                {renderedComponent == RenderedComponent.NewChatForm && <NewChatForm ws={ws} accountData={accountData}/>}
-                {renderedComponent == RenderedComponent.Chat && <Chat chatId={chosenChatId} ws={ws} messageList={messageList}/>}
-                {renderedComponent == RenderedComponent.NewServerForm && <NewServerForm ws={ws} accountData={accountData}/>}
-                {renderedComponent == RenderedComponent.Server && <Server ws={ws} messageList={messageList} callContextMenu={callContextMenu}/>}
+                {renderedComponent == RenderedComponent.NewChatForm   && <NewChatForm ws={ws} 
+                                                                                      accountData={accountData}/>}
+
+                {renderedComponent == RenderedComponent.Chat          && <Chat    chatId={chosenChatId} 
+                                                                                  ws={ws} 
+                                                                                  messageList={messageList}
+                                                                                  convType="chat"/>}
+
+                {renderedComponent == RenderedComponent.NewServerForm && <NewServerForm ws={ws} 
+                                                                                        accountData={accountData}/>}
+
+                {renderedComponent == RenderedComponent.Server        && <Server ws={ws} 
+                                                                                 serverData={serverData}
+                                                                                 callContextMenu={callContextMenu}
+                                                                                 textChannelTabClick={textChannelTabClick}
+                                                                                 textChannelMessageList={messageList}
+                                                                                 chosenTextChannelId={chosenTextChannelId.current}
+                                                                                 />}
             </div>
             <ContextMenu ref={contextMenu} actions={contextMenuActions}/>
         </div>

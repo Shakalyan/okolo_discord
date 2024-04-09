@@ -2,12 +2,12 @@ import MessageBox from "./MessageBox";
 import '../../styles/Chat.css'
 import Form from 'react-bootstrap/Form';
 import ComplexInput from "../general/ComplexInput";
-import { useRef, createRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 
 export default function Chat(props) {
 
     let inputRef = useRef();
-    let bottomRef = createRef();
+    let bottomRef = useRef();
 
     useEffect(()=>{
         bottomRef.current.scrollIntoView({ behavior: "smooth" });
@@ -16,7 +16,7 @@ export default function Chat(props) {
     function inputKeyDown(event) {
         if (event.keyCode === 13) {
             let msg = {
-                type: "chat",
+                type: props.convType,
                 subtype: "newMessage",
                 data: {
                     text: inputRef.current.value,

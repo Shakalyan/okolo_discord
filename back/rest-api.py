@@ -195,6 +195,29 @@ def getAllServersByAccountId():
     return json.dumps(servers, default=lambda o: o.__dict__)
 
 
+@app.route("/server")
+@db_except
+@auth_except
+def getServerById():
+    jwt_decode(getToken())
+    server = dm.serverRepo.findById(request.args.get('serverId'))
+    if server:
+        return json.dumps(server, default=lambda o: o.__dict__)
+    return Response(status=404)
+
+
+@app.route("/server/messages")
+@db_except
+@auth_except
+def getTextChannelMessagesById():
+    jwt_decode(getToken())
+    messages = dm.serverRepo.findTextChannelMessages(request.args.get("textChannelId"))
+    for message in messages:
+        account = dm.accountRepo.findById(message.accountId)
+        message.login = account.login
+    return json.dumps(messages, default=lambda o: o.__dict__)
+
+
 def wsSendMsg(id, msg):
     print(id)
     if sessions.get(id):
@@ -257,6 +280,7 @@ def ws_connect(ws: Server, token):
                     msg['data']['datetime'] = str(msgDatetime)
                     for member in chat.members:
                         wsSendMsg(member['id'], msg)
+
             elif type == 'server':
                 if subtype == 'new':
                     memberIds = data['members']
@@ -266,6 +290,43 @@ def ws_connect(ws: Server, token):
 
                     for memberId in memberIds:
                         wsSendMsg(memberId, msg)
+
+                elif subtype == 'newVoiceChannel':
+                    serverId = data['serverId']
+                    channelName = data['name']
+                    voiceChannelId = dm.serverRepo.insertVoiceChannel(serverId, channelName)
+                    
+                    msg['data']['id'] = voiceChannelId
+
+                    serverMembers = dm.serverRepo.findMembers(serverId)
+                    for member in serverMembers:
+                        wsSendMsg(member.id, msg)
+                
+                elif subtype == 'newTextChannel':
+                    serverId = data['serverId']
+                    channelName = data['name']
+                    textChannelId = dm.serverRepo.insertTextChannel(serverId, channelName)
+                    
+                    msg['data']['id'] = textChannelId
+
+                    serverMembers = dm.serverRepo.findMembers(serverId)
+                    for member in serverMembers:
+                        wsSendMsg(member.id, msg)
+                
+                elif subtype == 'newMessage':
+                    
+                    msgDatetime = datetime.utcnow()
+                    textChannelId = data['chatId']
+                    msgId = dm.messageRepo.insert(accountId, textChannelId, data['text'], msgDatetime)
+                    textChannel = dm.serverRepo.findTextChannel(textChannelId)
+                    members = dm.serverRepo.findMembers(textChannel.serverId)
+
+                    msg['data']['id'] = msgId
+                    msg['data']['login'] = accountLogin
+                    msg['data']['datetime'] = str(msgDatetime)
+                    print(msg)
+                    for member in members:
+                        wsSendMsg(member.id, msg)
 
         except ConnectionClosed:
             del sessions[jwt_data['accountId']]

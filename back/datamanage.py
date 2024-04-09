@@ -88,6 +88,26 @@ class Server:
     def __init__(self, queryResult):
         self.id, self.name = queryResult
         self.members = []
+        self.textChannels = []
+        self.voiceChannels = []
+
+
+class TextChannel:
+    id: str
+    serverId: str
+    name: str
+
+    def __init__(self, queryResult):
+        self.id, self.serverId, self.name = queryResult
+
+
+class VoiceChannel:
+    id: str
+    serverId: str
+    name: str
+
+    def __init__(self, queryResult):
+        self.id, self.serverId, self.name = queryResult
 
 
 class DataManager:
@@ -200,3 +220,39 @@ class ServerRepo():
             _eq_none(self.conn, f"INSERT INTO server_account_map VALUES('{id}', '{memberId}')")
 
         return id
+    
+    def findMembers(self, id):
+        members = _eq_all(self.conn, f"SELECT account.id, account.login, '', '' FROM account JOIN server_account_map ON account.id = server_account_map.account_id WHERE server_id = '{id}'")
+        return list(map(lambda m: Account(m), members))
+
+    def findById(self, id):
+        server = Server(_eq_one(self.conn, f"SELECT * FROM server WHERE id = '{id}'"))
+        if server is None:
+            return None
+        server.members = self.findMembers(id)
+
+        textChannels = _eq_all(self.conn, f"SELECT * FROM text_channel WHERE server_id = '{id}'")
+        voiceChannels = _eq_all(self.conn, f"SELECT * FROM voice_channel WHERE server_id = '{id}'")
+
+        server.textChannels = list(map(lambda tc: TextChannel(tc), textChannels))
+        server.voiceChannels = list(map(lambda vc: VoiceChannel(vc), voiceChannels))
+
+        return server
+    
+    def insertVoiceChannel(self, serverId, voiceChannelName):
+        id = _generateUUID()
+        _eq_none(self.conn, f"INSERT INTO voice_channel VALUES('{id}', '{serverId}', '{voiceChannelName}')")
+        return id
+    
+    def insertTextChannel(self, serverId, textChannelName):
+        id = _generateUUID()
+        _eq_none(self.conn, f"INSERT INTO text_channel VALUES('{id}', '{serverId}', '{textChannelName}')")
+        return id
+    
+    def findTextChannelMessages(self, textChannelId):
+        messages = _eq_all(self.conn, f"SELECT * FROM message WHERE chat_id = '{textChannelId}'")
+        return list(map(lambda m: Message(m), messages))
+    
+    def findTextChannel(self, textChannelId):
+        textChannel = _eq_one(self.conn, f"SELECT * FROM text_channel WHERE id = '{textChannelId}'")
+        return TextChannel(textChannel)
