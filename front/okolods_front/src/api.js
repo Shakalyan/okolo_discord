@@ -1,7 +1,7 @@
-export const backendHost = "http://192.168.1.113:5000";
+export const backendHost = "192.168.1.113:5000";
 
 export function makeUrl(endpoint) {
-    let url = `${backendHost}${endpoint}`;
+    let url = `http://${backendHost}${endpoint}`;
     return url;
 }
 
@@ -41,12 +41,28 @@ export function api_ping() {
     return sendQuery(makeUrl('/ping'), 'GET');
 }
 
-export function api_auth_getAccountChats(token) {
+export function api_auth_getAccountChats() {
+    let token = localStorage.getItem('token')
     return sendQuery(makeUrl(`/chats?token=${token}`), 'GET');
 }
 
-export function api_auth_accountEcho(token) {
+export function api_auth_accountEcho() {
+    let token = localStorage.getItem('token')
     return sendQuery(makeUrl(`/account/echo?token=${token}`), 'GET');
+}
+
+export function api_auth_getAccountId(login) {
+    let token = localStorage.getItem('token')
+    let url = makeUrl(`/account?login=${login}&token=${token}`)
+    return sendQuery(url, 'GET');
+}
+
+export function api_auth_getAllMessagesByChatId(chatId) {
+    let token = localStorage.getItem('token');
+    console.log(token)
+    console.log(chatId)
+    let url = makeUrl(`/messages?chatId=${chatId}&token=${token}`)
+    return sendQuery(url, 'GET')
 }
 
 export function wsapi_createChat(ws, name, isGroup, members) {
@@ -60,9 +76,4 @@ export function wsapi_createChat(ws, name, isGroup, members) {
         }
     };
     ws.send(JSON.stringify(body));
-}
-
-export function api_getAccountId(login) {
-    let url = makeUrl(`/account?login=${login}`)
-    return sendQuery(url, 'GET');
 }

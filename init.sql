@@ -6,6 +6,7 @@ CREATE TABLE account (
     salt VARCHAR(256) NOT NULL
 );
 INSERT INTO account VALUES('6bde3a2e-fc1b-4485-bcba-f9aec1326fdf', 'test', 'JDJiJDEyJExFbHdQSWNHMVFWU2NXeFFWUGhaSGVkLzZOcXdJMFFLOTcxakRWMW11T3pUY09qTzEvcWYu', 'JDJiJDEyJExFbHdQSWNHMVFWU2NXeFFWUGhaSGU=');
+INSERT INTO account VALUES('841d147f-d2d8-41ac-a1e4-3612766a4280', 'asdf', 'JDJiJDEyJGxjaU04a2lFbzhmdkdCQmVDeUo4cS5rRi5XUXE3Z0dlM1k3aWdiT3VNRndQbUhDaEhTYjdh', 'JDJiJDEyJGxjaU04a2lFbzhmdkdCQmVDeUo4cS4=');
 
 DROP TABLE IF EXISTS chat;
 CREATE TABLE chat (
@@ -20,4 +21,15 @@ CREATE TABLE chat_account_map (
     account_id UUID NOT NULL,
     FOREIGN KEY (chat_id) REFERENCES chat(id),
     FOREIGN KEY (account_id) REFERENCES account(id)
+);
+
+DROP TABLE IF EXISTS message;
+CREATE TABLE message (
+    id UUID PRIMARY KEY,
+    account_id UUID NOT NULL,
+    chat_id UUID NOT NULL,
+    text TEXT NOT NULL,
+    datetime timestamp NOT NULL,
+    FOREIGN KEY (account_id) REFERENCES account(id),
+    FOREIGN KEY (chat_id) REFERENCES chat(id)
 );

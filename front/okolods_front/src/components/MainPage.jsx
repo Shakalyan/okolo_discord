@@ -4,25 +4,59 @@ import Tabs from 'react-bootstrap/Tabs';
 import '../styles/MainPage.css'
 import MsTab from "./general/MsTab.jsx";
 import Button from "react-bootstrap/esm/Button.js";
-import { api_auth_accountEcho, api_auth_getAccountChats } from "../api.js";
+import { api_auth_accountEcho, api_auth_getAccountChats, api_auth_getAllMessagesByChatId, backendHost } from "../api.js";
 import NewChatForm from "./NewChatForm.jsx";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect, useState, useRef } from "react";
+import Chat from "./chat/Chat.jsx";
+import {BrowserRouter as Router, Route, Routes} from 'react-router-dom'
 
 export default function MainPage() {
 
     const [ws, setWs] = useState(null);
+
     const chatListRef = useRef([]);
     const [chatList, setChatList] = useState([]);
+
     const [accountData, setAccountData] = useState(null);
+
+    const [chosenChatId, setChosenChatId] = useState('');
+
+    const messageListRef = useRef([]);
+    const [messageList, setMessageList] = useState([]);
+
+    const RenderedComponent = {
+        None: 0,
+        Chat: 1,
+        NewChat: 2
+    };
+    const [renderedComponent, setRenderedComponent] = useState(RenderedComponent.None);
+
+    function chatTabClick(event, id) {
+        setChosenChatId(id);
+        api_auth_getAllMessagesByChatId(id).then((response) => {
+            if (response.status == 200) {
+                response.json().then((json) => {
+                    setRenderedComponent(RenderedComponent.Chat);
+                    setMessageList(json);
+                    messageListRef.current = json;
+                })
+            }
+        })
+    }
 
     function appendToChatList(chat) {
         chatListRef.current.push(chat);
         setChatList([...chatListRef.current]);
     }
 
+    function appendToMessageList(msg) {
+        messageListRef.current.push(msg);
+        setMessageList([...messageListRef.current]);
+    }
+
     function initWebSocket() {
-        let socket = new WebSocket(`ws://192.168.1.113:5000/ws/${localStorage.getItem('token')}`);
+        let socket = new WebSocket(`ws://${backendHost}/ws/${localStorage.getItem('token')}`);
         socket.onopen = (event) => {
             console.log("open socket");
         };
@@ -34,20 +68,24 @@ export default function MainPage() {
                 if (msg.subtype == 'new') {
                     appendToChatList(msg.data);
                 }
+                if (msg.subtype == 'newMessage') {
+                    appendToMessageList(msg.data);
+                }
             }
         };
         setWs(socket);
     }
 
     function loadInitialData() {
-        api_auth_accountEcho(localStorage.getItem('token')).then((response) => {
+        api_auth_accountEcho().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
                     setAccountData(json);
                 })
             }
-        })
-        api_auth_getAccountChats(localStorage.getItem('token')).then((response) => {
+        });
+
+        api_auth_getAccountChats().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
                     setChatList(json);
@@ -64,6 +102,7 @@ export default function MainPage() {
 
     function newChatClick(event) {
         console.log("open new chat window....");
+        setRenderedComponent(RenderedComponent.NewChat);
     }
 
     return (
@@ -77,7 +116,7 @@ export default function MainPage() {
                     <Tab eventKey="messages" title="Messages">
                         <Stack>
                             <Button variant='dark' size='sm' onClick={newChatClick}>New</Button>
-                            {chatList.map((chat) => <MsTab key={chat.id} text={chat.name}/>)}
+                            {chatList.map((chat) => <MsTab key={chat.id} text={chat.name} onClick={(event)=>chatTabClick(event, chat.id)}/>)}
                         </Stack>
                     </Tab>
                     <Tab eventKey="servers" title="Servers">
@@ -86,7 +125,8 @@ export default function MainPage() {
                 </Tabs>
             </div>
             <div id="main_right_area">
-                <NewChatForm ws={ws} accountData={accountData}/>
+                {renderedComponent == RenderedComponent.NewChat && <NewChatForm ws={ws} accountData={accountData}/>}
+                {renderedComponent == RenderedComponent.Chat && <Chat chatId={chosenChatId} ws={ws} messageList={messageList}/>}
             </div>
         </div>
     );

@@ -6,6 +6,7 @@ import jwt
 from cryptography.hazmat.primitives import serialization
 from datetime import datetime, timedelta
 from flask_sock import Sock, Server, ConnectionClosed
+from psycopg2 import DatabaseError
 import json
 
 app = Flask(__name__)
@@ -41,10 +42,29 @@ def jwt_create(account_id, login):
 
 
 def jwt_decode(token):
-    try:
-        return jwt.decode(token, pub_key, ['RS256'])
-    except (jwt.ExpiredSignatureError, jwt.DecodeError):
-        return None
+    return jwt.decode(token, pub_key, ['RS256'])
+    
+
+def db_except(func):
+    def wrapper_func(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except (Exception, DatabaseError) as error:
+            print(error)
+            return Response(status=500)
+    wrapper_func.__name__ = func.__name__
+    return wrapper_func
+
+
+def auth_except(func):
+    def wrapper_func(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except (jwt.ExpiredSignatureError, jwt.DecodeError) as error:
+            print(error)
+            return Response(status=401)
+    wrapper_func.__name__ = func.__name__
+    return wrapper_func
 
 
 @app.route('/ping')
@@ -53,6 +73,7 @@ def ping():
 
 
 @app.route('/signup', methods=['POST'])
+@db_except
 def signup():
     data = request.json
     login = data['login']
@@ -65,9 +86,7 @@ def signup():
         return Response("SHORT_PASSWORD", status=400)
     
     result = dm.accountRepo.findByLogin(login)
-    if result == -1:
-        return Response(status=500)
-    elif result != None:
+    if result != None:
         return Response("LOGIN_IS_USED", status=400)
 
     salt = bcrypt.gensalt()
@@ -76,22 +95,19 @@ def signup():
     enc_salt = base64.b64encode(salt).decode('utf-8')
     enc_hashed_pw = base64.b64encode(hashed_pw).decode('utf-8')
 
-    result = dm.accountRepo.insert(login, enc_hashed_pw, enc_salt)
-    if result == -1:
-        return Response(status=500)
+    dm.accountRepo.insert(login, enc_hashed_pw, enc_salt)
     
     return Response(status=200)
 
 
 @app.route('/signin', methods=['POST'])
+@db_except
 def signin():
     data = request.json
     login = data['login']
     password = data['password']
 
     account = dm.accountRepo.findByLogin(login)
-    if account == -1:
-        return Response(status=500)
     if account == None:
         return Response(status=400)
     
@@ -104,41 +120,32 @@ def signin():
         return Response(status=401)
 
 
-@app.route('/users')
-def getAllUsers():
-    result = dm.accountRepo.getAll()
-    if result == -1:
-        return Response(status=500)
-    return result
-
-
 @app.route('/account')
+@db_except
+@auth_except
 def getAccountId():
+    jwt_decode(request.args.get('token'))
+
     login = request.args.get('login')
     if login is None:
         return Response(status=400)
     
     account = dm.accountRepo.findByLogin(login)
-    if account == -1:
-        return Response(status=500)
-    elif account == None:
+    if account == None:
         return Response(status=404)
     else:
         return Response(account.id, status=200)
 
 
 @app.route('/chats')
+@db_except
+@auth_except
 def getAllChats():
     token = request.args.get('token')
     auth = jwt_decode(token)
-    if not auth:
-        return Response(status=401)
-
     accountId = auth['accountId']
 
     chats = dm.chatRepo.findAllByAccountId(accountId)
-    if chats == -1:
-        return Response(status=500)
     
     for chat in chats:
         if not chat.isGroup:
@@ -151,16 +158,36 @@ def getAllChats():
 
 
 @app.route('/account/echo')
+@auth_except
 def accountEcho():
     token = request.args.get('token')
     auth = jwt_decode(token)
-    if not auth:
-        return Response(status=401)
     accountData = {
         'id': auth['accountId'],
         'login': auth['login']
     }
     return accountData
+
+
+@app.route('/messages')
+@db_except
+@auth_except
+def getAllMessagesByChatId():
+    jwt_decode(request.args.get('token'))
+
+    chatId = request.args.get('chatId')
+    messages = dm.messageRepo.getAllByChatId(chatId)
+    for message in messages:
+        account = dm.accountRepo.findById(message.accountId)
+        message.login = account.login
+
+    return json.dumps(messages, default=lambda o: o.__dict__)
+
+
+def wsSendMsg(id, msg):
+    print(id)
+    if sessions.get(id):
+        sessions[id].send(json.dumps(msg))
 
 
 @sock.route('/ws/<token>')
@@ -170,6 +197,7 @@ def ws_connect(ws: Server, token):
         return
     
     accountId = jwt_data['accountId']
+    accountLogin = jwt_data['login']
     if accountId in sessions:
         sessions[accountId].close()
     sessions[accountId] = ws
@@ -185,9 +213,9 @@ def ws_connect(ws: Server, token):
 
             if type == 'chat':
                 if subtype == 'new':
-                    members = data['members']
-                    members.append(accountId)
-                    chatId = dm.chatRepo.createNew(data['name'], data['isGroup'], members)
+                    memberIds = data['members']
+                    memberIds.append(accountId)
+                    chatId = dm.chatRepo.createNew(data['name'], data['isGroup'], memberIds)
                     if chatId == -1:
                         print('DATABASE FAILURE')
                         continue 
@@ -195,21 +223,29 @@ def ws_connect(ws: Server, token):
                     msg['data']['id'] = str(chatId)
 
                     if not data['isGroup']:
-                        member1 = dm.accountRepo.findById(members[0])
-                        member2 = dm.accountRepo.findById(members[1])
+                        member1 = dm.accountRepo.findById(memberIds[0])
+                        member2 = dm.accountRepo.findById(memberIds[1])
                         
-                        if member1.id in sessions:
-                            msg['data']['name'] = member2.login
-                            sessions[member1.id].send(json.dumps(msg))
+                        msg['data']['name'] = member2.login
+                        wsSendMsg(member1.id, msg)
                         
-                        if member2.id in sessions:
-                            msg['data']['name'] = member1.login
-                            sessions[member2.id].send(json.dumps(msg))
+                        msg['data']['name'] = member1.login
+                        wsSendMsg(member2.id, msg)
 
                     else:
-                        for member in members:
-                            if member in sessions:
-                                sessions[member].send(json.dumps(msg))
+                        for memberId in memberIds:
+                            wsSendMsg(memberId, msg)
+                
+                if subtype == 'newMessage':
+                    msgDatetime = datetime.utcnow()
+                    msgId = dm.messageRepo.insert(accountId, data['chatId'], data['text'], msgDatetime)
+                    chat = dm.chatRepo.findById(data['chatId'])
+
+                    msg['data']['id'] = msgId
+                    msg['data']['login'] = accountLogin
+                    msg['data']['datetime'] = str(msgDatetime)
+                    for member in chat.members:
+                        wsSendMsg(member['id'], msg)
 
         except ConnectionClosed:
             del sessions[jwt_data['accountId']]

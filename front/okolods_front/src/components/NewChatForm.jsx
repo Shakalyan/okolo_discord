@@ -4,7 +4,7 @@ import ComplexInput from './general/ComplexInput.jsx';
 import ListGroup from 'react-bootstrap/ListGroup';
 import Button from "react-bootstrap/esm/Button";
 import { useRef, useState } from "react";
-import { api_getAccountId, wsapi_createChat } from "../api.js";
+import { api_auth_getAccountId, wsapi_createChat } from "../api.js";
 
 export default function NewChatForm(props) {
 
@@ -47,7 +47,7 @@ export default function NewChatForm(props) {
                 return;
             }
 
-            api_getAccountId(login).then((response) => {
+            api_auth_getAccountId(login).then((response) => {
                 if (response.status == 200) {
                     response.text().then((id) => {
                         setMemberDsc('');
