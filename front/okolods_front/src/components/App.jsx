@@ -7,13 +7,15 @@ import {BrowserRouter as Router, Route, Routes} from 'react-router-dom'
 
 function App() {
     return (
+        <>
         <Router>
             <Routes>
                 <Route path="/signin" Component={Signin} />
                 <Route path="/signup" Component={Signup} />
                 <Route path="/main" Component={MainPage} />
             </Routes>
-        </Router>        
+        </Router>
+        </>
     );
 }
 

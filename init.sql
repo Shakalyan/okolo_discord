@@ -47,8 +47,16 @@ CREATE TABLE server_account_map (
     FOREIGN KEY (account_id) REFERENCES account(id)
 );
 
--- DROP TABLE IF EXISTS text_channel;
--- CREATE TABLE text_channel {
---     id UUID PRIMARY KEY,
---     name VARCHAR
--- }
+DROP TABLE IF EXISTS text_channel;
+CREATE TABLE text_channel {
+    id UUID PRIMARY KEY,
+    server_id UUID NOT NULL,
+    name VARCHAR
+};
+
+DROP TABLE IF EXISTS voice_channel;
+CREATE TABLE voice_channel {
+    id UUID PRIMARY KEY,
+    server_id UUID NOT NULL,
+    name VARCHAR
+};

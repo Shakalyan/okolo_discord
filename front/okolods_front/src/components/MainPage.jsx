@@ -4,9 +4,11 @@ import '../styles/MainPage.css'
 import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, backendHost } from "../api.js";
 import NewChatForm from "./NewChatForm.jsx";
 import { NewServerForm } from './NewServerForm.jsx';
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, createRef } from "react";
 import Chat from "./chat/Chat.jsx";
 import { MsList } from "./main/MsList.jsx";
+import { Server } from './server/Server.jsx';
+import ContextMenu from './general/ContextMenu.jsx';
 
 export default function MainPage() {
 
@@ -21,16 +23,20 @@ export default function MainPage() {
     const [accountData, setAccountData] = useState(null);
 
     const [chosenChatId, setChosenChatId] = useState('');
+    const [chosenServerId, setChosenServerId] = useState('');
 
     const messageListRef = useRef([]);
     const [messageList, setMessageList] = useState([]);
 
+    const contextMenu = createRef();
+    const [contextMenuActions, setContextMenuActions] = useState([]);
 
     const RenderedComponent = {
         None: 0,
         Chat: 1,
         NewChatForm: 2,
-        NewServerForm: 3
+        NewServerForm: 3,
+        Server: 4
     };
     const [renderedComponent, _setRenderedComponent] = useState(RenderedComponent.None);
     let renderedComponentInfo = useRef({type: RenderedComponent.None});
@@ -54,6 +60,11 @@ export default function MainPage() {
                 })
             }
         })
+    }
+
+    function serverTabClick(event, id) {
+        setChosenServerId(id);
+        setRenderedComponent(RenderedComponent.Server, {id: id});
     }
 
     function appendToChatList(chat) {
@@ -135,6 +146,19 @@ export default function MainPage() {
     }, []);
 
 
+    function callContextMenu(event, actions) {
+        event.preventDefault();
+        contextMenu.current.style.left = `${event.clientX}px`
+        contextMenu.current.style.top = `${event.clientY}px`
+        contextMenu.current.hidden = false;
+        setContextMenuActions(actions);
+    }
+
+    document.onclick = (event) => {
+        contextMenu.current.hidden = true;
+    }
+
+
     return (
         <div id="main_container">
             <div id="main_left_panel">
@@ -151,7 +175,7 @@ export default function MainPage() {
                     <Tab eventKey="servers" title="Servers">
                         <MsList list={serverList}
                                 newTabClick={() => setRenderedComponent(RenderedComponent.NewServerForm, {})}
-                                tabClick={chatTabClick}/>
+                                tabClick={serverTabClick}/>
                     </Tab>
                 </Tabs>
             </div>
@@ -159,7 +183,9 @@ export default function MainPage() {
                 {renderedComponent == RenderedComponent.NewChatForm && <NewChatForm ws={ws} accountData={accountData}/>}
                 {renderedComponent == RenderedComponent.Chat && <Chat chatId={chosenChatId} ws={ws} messageList={messageList}/>}
                 {renderedComponent == RenderedComponent.NewServerForm && <NewServerForm ws={ws} accountData={accountData}/>}
+                {renderedComponent == RenderedComponent.Server && <Server ws={ws} messageList={messageList} callContextMenu={callContextMenu}/>}
             </div>
+            <ContextMenu ref={contextMenu} actions={contextMenuActions}/>
         </div>
     );
 }

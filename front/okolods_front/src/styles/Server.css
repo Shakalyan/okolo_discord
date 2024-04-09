@@ -1,0 +1,28 @@
+#server_container {
+    display: flex;
+    height: 100vh;
+}
+
+#server_control_panel {
+    height: 100vh;
+    background-color: #202020;
+    width: 300px;
+}
+
+.server_channel_container {
+    margin: 0;
+}
+
+.server_channel_header_text {
+    background-color: #202020;
+    font-style: oblique;
+    margin: 0;
+}
+
+.server_channel_name_text {
+    margin: 0;
+}
+
+.server_channel_member_text {
+    margin: 0 0 0 30px;
+}

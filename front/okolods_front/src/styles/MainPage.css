@@ -51,3 +51,12 @@
 #new_server_form {
     width: 500px;
 }
+
+#context-menu {
+    background-color: white;
+    color: aqua;
+    position: absolute;
+    top: 500px;
+    min-width: 200px;
+    border: white solid 1px;
+}
