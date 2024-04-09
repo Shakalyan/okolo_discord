@@ -1,14 +1,12 @@
-import Stack from "react-bootstrap/esm/Stack";
-import Form from 'react-bootstrap/Form';
-import ComplexInput from './general/ComplexInput.jsx';
+import Stack from 'react-bootstrap/Stack'
+import ComplexInput from './general/ComplexInput';
 import ListGroup from 'react-bootstrap/ListGroup';
 import Button from "react-bootstrap/esm/Button";
 import { useRef, useState } from "react";
-import { api_getAccountId, wsapi_createChat } from "../api.js";
+import { api_getAccountId } from "../api.js";
 
-export default function NewChatForm(props) {
+export function NewServerForm(props) {
 
-    let checkBox = useRef();
     let nameInput = useRef();
     let memberInput = useRef();
 
@@ -17,28 +15,12 @@ export default function NewChatForm(props) {
     const [memberLoginsList, setMemberLoginsList] = useState([]);
     const [memberIdsList, setMemberIdsList] = useState([]);
 
-    function checkBoxChange(event) {
-        if (checkBox.current.checked) {
-            nameInput.current.disabled = false;
-        } else {
-            nameInput.current.value = "";
-            nameInput.current.disabled = true;
-        }
-    }
-
     function memberInputKeyDown(event) {
         if (event.keyCode === 13) {
             let login = memberInput.current.value;
             
-            console.log(checkBox.current.disabled);
-
             if (login == props.accountData.login) {
                 setMemberDsc('You cannot add yourself');
-                return;
-            }
-
-            if (!checkBox.current.checked && memberLoginsList.length > 0) {
-                setMemberDsc('You can add only one user in non-group chat');
                 return;
             }
 
@@ -61,43 +43,36 @@ export default function NewChatForm(props) {
         }
     }
 
-    function createChatClick(event) {
+    function createServerClick(event) {
         let name = nameInput.current.value;
-        let isGroup = checkBox.current.checked;
         setNameDsc('');
         setMemberDsc('');
         
-        if (isGroup && name.length == 0) {
+        if (name.length == 0) {
             setNameDsc('Enter name');
             return;
         }
 
-        if (memberLoginsList.length == 0) {
-            setMemberDsc('Add at least one member');
-            return;
-        }
-        wsapi_createChat(props.ws, name, isGroup, memberIdsList);
+        props.ws.send(JSON.stringify({
+            type: "server",
+            subtype: "new",
+            data: {
+                name: name,
+                members: memberIdsList
+            }
+        }));
     }
 
     return (
-        <div id="new_chat_form">
+        <div id="new_server_form">
             <Stack gap={3}>
-                <h1>New chat</h1>
-                <Form>
-                <Form.Check
-                    type="switch"
-                    id="custom-switch"
-                    label="Group"
-                    ref={checkBox}
-                    onChange={checkBoxChange}
-                />
-                </Form>
-                <ComplexInput text="Name" ref={nameInput} disabled={true} dsc={nameDsc}/>
+                <h1>New server</h1>
+                <ComplexInput text="Name" ref={nameInput} dsc={nameDsc}/>
                 <ComplexInput text="Member" ref={memberInput} onKeyDown={memberInputKeyDown} dsc={memberDsc}/>
                 <ListGroup style={{ maxHeight: '200px', overflowY: 'auto' }}>
                     {memberLoginsList.map((member) => <ListGroup.Item key={member}>{member}</ListGroup.Item>)}
                 </ListGroup>
-                <Button variant="light" onClick={createChatClick}>Create</Button>
+                <Button variant="light" onClick={createServerClick}>Create</Button>
             </Stack>
         </div>
     );

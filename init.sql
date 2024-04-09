@@ -30,6 +30,25 @@ CREATE TABLE message (
     chat_id UUID NOT NULL,
     text TEXT NOT NULL,
     datetime timestamp NOT NULL,
-    FOREIGN KEY (account_id) REFERENCES account(id),
-    FOREIGN KEY (chat_id) REFERENCES chat(id)
+    FOREIGN KEY (account_id) REFERENCES account(id)
 );
+
+DROP TABLE IF EXISTS server;
+CREATE TABLE server (
+    id UUID PRIMARY KEY,
+    name VARCHAR(256) NOT NULL
+);
+
+DROP TABLE IF EXISTS server_account_map;
+CREATE TABLE server_account_map (
+    server_id UUID NOT NULL,
+    account_id UUID NOT NULL,
+    FOREIGN KEY (server_id) REFERENCES server(id),
+    FOREIGN KEY (account_id) REFERENCES account(id)
+);
+
+-- DROP TABLE IF EXISTS text_channel;
+-- CREATE TABLE text_channel {
+--     id UUID PRIMARY KEY,
+--     name VARCHAR
+-- }

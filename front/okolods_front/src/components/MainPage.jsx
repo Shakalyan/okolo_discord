@@ -1,8 +1,9 @@
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import '../styles/MainPage.css'
-import { api_auth_accountEcho, api_auth_getAccountChats, api_auth_getAllMessagesByChatId, backendHost } from "../api.js";
+import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, backendHost } from "../api.js";
 import NewChatForm from "./NewChatForm.jsx";
+import { NewServerForm } from './NewServerForm.jsx';
 import { useEffect, useState, useRef } from "react";
 import Chat from "./chat/Chat.jsx";
 import { MsList } from "./main/MsList.jsx";
@@ -28,7 +29,8 @@ export default function MainPage() {
     const RenderedComponent = {
         None: 0,
         Chat: 1,
-        NewChatForm: 2
+        NewChatForm: 2,
+        NewServerForm: 3
     };
     const [renderedComponent, _setRenderedComponent] = useState(RenderedComponent.None);
     let renderedComponentInfo = useRef({type: RenderedComponent.None});
@@ -43,7 +45,7 @@ export default function MainPage() {
 
     function chatTabClick(event, id) {
         setChosenChatId(id);
-        api_auth_getAllMessagesByChatId(id).then((response) => {
+        api_getAllMessagesByChatId(id).then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
                     setRenderedComponent(RenderedComponent.Chat, {id: id});
@@ -57,6 +59,11 @@ export default function MainPage() {
     function appendToChatList(chat) {
         chatListRef.current.push(chat);
         setChatList([...chatListRef.current]);
+    }
+
+    function appendToServerList(server) {
+        serverListRef.current.push(server);
+        setServerList([...serverListRef.current]);
     }
 
     function appendToMessageList(msg) {
@@ -85,12 +92,17 @@ export default function MainPage() {
                     }
                 }
             }
+            else if (msg.type == 'server') {
+                if (msg.subtype == 'new') {
+                    appendToServerList(msg.data);
+                }
+            }
         };
         setWs(socket);
     }
 
     function loadInitialData() {
-        api_auth_accountEcho().then((response) => {
+        api_accountEcho().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
                     setAccountData(json);
@@ -98,7 +110,7 @@ export default function MainPage() {
             }
         });
 
-        api_auth_getAccountChats().then((response) => {
+        api_getAccountChats().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
                     setChatList(json);
@@ -106,6 +118,15 @@ export default function MainPage() {
                 });
             }
         });
+
+        api_getAccountServers().then((response) => {
+            if (response.status == 200) {
+                response.json().then((json) => {
+                    setServerList(json);
+                    serverListRef.current = json;
+                })
+            }
+        })
     }
 
     useEffect(() => {
@@ -128,13 +149,16 @@ export default function MainPage() {
                                 tabClick={chatTabClick}/>
                     </Tab>
                     <Tab eventKey="servers" title="Servers">
-                        Tab content for Profile
+                        <MsList list={serverList}
+                                newTabClick={() => setRenderedComponent(RenderedComponent.NewServerForm, {})}
+                                tabClick={chatTabClick}/>
                     </Tab>
                 </Tabs>
             </div>
             <div id="main_right_area">
                 {renderedComponent == RenderedComponent.NewChatForm && <NewChatForm ws={ws} accountData={accountData}/>}
                 {renderedComponent == RenderedComponent.Chat && <Chat chatId={chosenChatId} ws={ws} messageList={messageList}/>}
+                {renderedComponent == RenderedComponent.NewServerForm && <NewServerForm ws={ws} accountData={accountData}/>}
             </div>
         </div>
     );

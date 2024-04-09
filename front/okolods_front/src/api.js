@@ -41,28 +41,31 @@ export function api_ping() {
     return sendQuery(makeUrl('/ping'), 'GET');
 }
 
-export function api_auth_getAccountChats() {
+export function api_getAccountChats() {
     let token = localStorage.getItem('token')
     return sendQuery(makeUrl(`/chats?token=${token}`), 'GET');
 }
 
-export function api_auth_accountEcho() {
+export function api_accountEcho() {
     let token = localStorage.getItem('token')
     return sendQuery(makeUrl(`/account/echo?token=${token}`), 'GET');
 }
 
-export function api_auth_getAccountId(login) {
+export function api_getAccountId(login) {
     let token = localStorage.getItem('token')
     let url = makeUrl(`/account?login=${login}&token=${token}`)
     return sendQuery(url, 'GET');
 }
 
-export function api_auth_getAllMessagesByChatId(chatId) {
+export function api_getAllMessagesByChatId(chatId) {
     let token = localStorage.getItem('token');
-    console.log(token)
-    console.log(chatId)
     let url = makeUrl(`/messages?chatId=${chatId}&token=${token}`)
     return sendQuery(url, 'GET')
+}
+
+export function api_getAccountServers() {
+    let token = localStorage.getItem('token');
+    return sendQuery(makeUrl(`/servers?token=${token}`))
 }
 
 export function wsapi_createChat(ws, name, isGroup, members) {

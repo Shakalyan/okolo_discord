@@ -66,6 +66,8 @@ def auth_except(func):
     wrapper_func.__name__ = func.__name__
     return wrapper_func
 
+def getToken():
+    return request.args.get('token')
 
 @app.route('/ping')
 def ping():
@@ -124,7 +126,7 @@ def signin():
 @db_except
 @auth_except
 def getAccountId():
-    jwt_decode(request.args.get('token'))
+    jwt_decode(getToken())
 
     login = request.args.get('login')
     if login is None:
@@ -141,7 +143,7 @@ def getAccountId():
 @db_except
 @auth_except
 def getAllChats():
-    token = request.args.get('token')
+    token = getToken()
     auth = jwt_decode(token)
     accountId = auth['accountId']
 
@@ -160,7 +162,7 @@ def getAllChats():
 @app.route('/account/echo')
 @auth_except
 def accountEcho():
-    token = request.args.get('token')
+    token = getToken()
     auth = jwt_decode(token)
     accountData = {
         'id': auth['accountId'],
@@ -173,7 +175,7 @@ def accountEcho():
 @db_except
 @auth_except
 def getAllMessagesByChatId():
-    jwt_decode(request.args.get('token'))
+    jwt_decode(getToken())
 
     chatId = request.args.get('chatId')
     messages = dm.messageRepo.getAllByChatId(chatId)
@@ -182,6 +184,15 @@ def getAllMessagesByChatId():
         message.login = account.login
 
     return json.dumps(messages, default=lambda o: o.__dict__)
+
+
+@app.route("/servers")
+@db_except
+@auth_except
+def getAllServersByAccountId():
+    auth = jwt_decode(getToken())
+    servers = dm.serverRepo.getAllByAccountId(auth['accountId'])
+    return json.dumps(servers, default=lambda o: o.__dict__)
 
 
 def wsSendMsg(id, msg):
@@ -246,6 +257,15 @@ def ws_connect(ws: Server, token):
                     msg['data']['datetime'] = str(msgDatetime)
                     for member in chat.members:
                         wsSendMsg(member['id'], msg)
+            elif type == 'server':
+                if subtype == 'new':
+                    memberIds = data['members']
+                    memberIds.append(accountId)
+                    serverId = dm.serverRepo.createNew(data['name'], memberIds)
+                    msg['data']['id'] = serverId
+
+                    for memberId in memberIds:
+                        wsSendMsg(memberId, msg)
 
         except ConnectionClosed:
             del sessions[jwt_data['accountId']]

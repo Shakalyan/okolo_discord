@@ -81,6 +81,15 @@ class Message:
         self.login = ''
 
 
+class Server:
+    id: str
+    name: str
+
+    def __init__(self, queryResult):
+        self.id, self.name = queryResult
+        self.members = []
+
+
 class DataManager:
     def __init__(self):
         try:
@@ -90,6 +99,7 @@ class DataManager:
             self.accountRepo = AccountRepo(self.connection)
             self.chatRepo = ChatRepo(self.connection)
             self.messageRepo = MessageRepo(self.connection)
+            self.serverRepo = ServerRepo(self.connection)
         except:
             print("Failed to connect to database")
             raise BaseException()
@@ -172,3 +182,21 @@ class MessageRepo():
     def getAllByChatId(self, chatId):
         result = _eq_all(self.conn, f"SELECT * FROM message WHERE chat_id = '{chatId}'")
         return list(map(lambda r: Message(r), result))
+
+
+class ServerRepo():
+    def __init__(self, conn):
+        self.conn = conn
+    
+    def getAllByAccountId(self, accountId):
+        result = _eq_all(self.conn, f"SELECT server.id, server.name FROM server JOIN server_account_map ON server.id = server_account_map.server_id WHERE account_id = '{accountId}'")
+        return list(map(lambda s: Server(s), result))
+    
+    def createNew(self, name, memberIds):
+        id = _generateUUID()
+        _eq_none(self.conn, f"INSERT INTO server VALUES('{id}', '{name}')")
+
+        for memberId in memberIds:
+            _eq_none(self.conn, f"INSERT INTO server_account_map VALUES('{id}', '{memberId}')")
+
+        return id
