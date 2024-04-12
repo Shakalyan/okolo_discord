@@ -81,7 +81,7 @@ export function api_getTextChannelMessages(textChannelId) {
 }
 
 export function wsapi_createChat(ws, name, isGroup, members) {
-    let body = {
+    let msg = {
         type: 'chat',
         subtype: 'new',
         data: {
@@ -90,5 +90,38 @@ export function wsapi_createChat(ws, name, isGroup, members) {
             members: members
         }
     };
-    ws.send(JSON.stringify(body));
+    ws.send(JSON.stringify(msg));
+}
+
+export function wsapi_leaveVoiceChat(ws, chatId) {
+    let msg = {
+        type: "room",
+        subtype: "leave",
+        data: {
+            id: chatId
+        }
+    };
+    ws.send(JSON.stringify(msg));
+}
+
+export function wsapi_joinVoiceChat(ws, chatId) {
+    let msg = {
+        type: "room",
+        subtype: "join",
+        data: {
+            id: chatId
+        }
+    };
+    ws.send(JSON.stringify(msg));
+}
+
+export function wsapi_roomStartCall(ws, chatId) {
+    let msg = {
+        type: "webrtc",
+        subtype: "startCall",
+        data: {
+            id: chatId
+        }
+    };
+    ws.send(JSON.stringify(msg));
 }

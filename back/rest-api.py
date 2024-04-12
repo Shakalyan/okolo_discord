@@ -228,7 +228,7 @@ def getTextChannelMessagesById():
 def wsSendMsg(id, msg):
     print(id)
     if sessions.get(id):
-        sessions[id]['ws'].send(json.dumps(msg))
+        sessions[id]['ws'].send(json.dumps(msg, default=lambda o: o.__dict__))
 
 
 @sock.route('/ws/<token>')
@@ -241,7 +241,7 @@ def ws_connect(ws: Server, token):
     accountLogin = jwt_data['login']
     accountData = {'id': accountId, 'login': accountLogin}
     if accountId in sessions:
-        sessions[accountId].close()
+        sessions[accountId]['ws'].close()
     sessions[accountId] = {
         'ws': ws,
         'roomId': None
@@ -367,13 +367,39 @@ def ws_connect(ws: Server, token):
 
                     for member in server.members:
                         wsSendMsg(member.id, msg)
+            
+            elif type == 'webrtc':
+                voiceChannel = dm.serverRepo.findVoiceChannel(data['id'])
+                server = dm.serverRepo.findById(voiceChannel.serverId)
+
+                for member in server.members:
+                    if member.id != accountId:
+                        wsSendMsg(member.id, msg)
                     
 
         except ConnectionClosed:
             if sessions[accountId]['roomId']:
-                rooms[sessions[accountId]['roomId']].remove(accountData)
+                print("CONNECTION CLOSED, SEND LEAVE MESSAGE")
+                roomId = sessions[accountId]['roomId']
+                rooms[roomId].remove(accountData)
+                msg = {
+                    'type': 'room',
+                    'subtype': 'leave',
+                    'data': {
+                        'id': roomId,
+                        'accountData': accountData
+                    }
+                }
+                voiceChannel = dm.serverRepo.findVoiceChannel(roomId)
+                server = dm.serverRepo.findById(voiceChannel.serverId)
+                for member in server.members:
+                    if member.id != accountId:
+                        print(f'SENDING LEAVE MESSAGE TO {member.id}')
+                        wsSendMsg(member.id, msg)
+                print('LEAVE MESSAGE SENT')
+
             del sessions[accountId]
-            print('connection closed')
+            print(f'{accountLogin} CLIENT CONNECTION CLOSED')
             raise ConnectionClosed        
     
 

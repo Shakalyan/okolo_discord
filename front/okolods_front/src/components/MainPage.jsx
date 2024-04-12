@@ -1,7 +1,7 @@
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import '../styles/MainPage.css'
-import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, api_getServerById, api_getTextChannelMessages, backendHost } from "../api.js";
+import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, api_getServerById, api_getTextChannelMessages, backendHost, wsapi_joinVoiceChat, wsapi_leaveVoiceChat, wsapi_roomStartCall } from "../api.js";
 import NewChatForm from "./NewChatForm.jsx";
 import { NewServerForm } from './NewServerForm.jsx';
 import { useEffect, useState, useRef } from "react";
@@ -100,25 +100,28 @@ export default function MainPage() {
     }
 
     function voiceChannelTabClick(event, id) {
-        if (chosenVoiceChannelId.current) {
-            let msg = {
-                type: "room",
-                subtype: "leave",
-                data: {
-                    id: chosenVoiceChannelId.current
-                }
-            };
-            ws.send(JSON.stringify(msg));
+        if (chosenVoiceChannelId.current == id) {
+            console.log("ALREADY IN THAT VOICE CHAT")
+            return;
         }
-        let msg = {
-            type: "room",
-            subtype: "join",
-            data: {
-                id: id
-            }
-        };
-        ws.send(JSON.stringify(msg));
+        if (chosenVoiceChannelId.current) {
+            console.log("LEAVING PREVIOUS VOICE CHAT....")
+            wsapi_leaveVoiceChat(ws, chosenVoiceChannelId.current);
+        }
+        wsapi_joinVoiceChat(ws, id);
         setRenderedComponent(RenderedComponent.ServerConference, {channel: "voice", id: id});
+    }
+
+    function leaveChannelButtonClick(event) {
+        if (!chosenVoiceChannelId.current)
+            return;
+
+        localStreamRef.current.getTracks().forEach(function(track) {
+            track.stop();
+        });
+        setRenderedComponent(RenderedComponent.Server, {});
+        wsapi_leaveVoiceChat(ws, chosenVoiceChannelId.current);
+        localStreamRef.current = null;
     }
 
     function appendToChatList(chat) {
@@ -138,7 +141,13 @@ export default function MainPage() {
 
     function setupDevices() {
         console.log('setupDevice invoked');
-        return navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    }
+
+    function isServerRendered() {
+        return  renderedComponent == RenderedComponent.Server || 
+                renderedComponent == RenderedComponent.ServerChat ||
+                renderedComponent == RenderedComponent.ServerConference;
     }
 
     function initWebSocket() {
@@ -162,7 +171,7 @@ export default function MainPage() {
                     }
                 }
             }
-            else if (msg.type == 'server') {
+            else if (msg.type == 'server' && isServerRendered()) {
                 if (msg.subtype == 'new') {
                     appendToServerList(msg.data);
                 }
@@ -193,14 +202,16 @@ export default function MainPage() {
                                 voiceChannel.activeMembers.push(msg.data.accountData);
                                 setServerData({...serverDataRef.current});
                                 chosenVoiceChannelId.current = msg.data.id;
+                                wsapi_roomStartCall(socket, msg.data.id);
                             })
+                            return;
                         }
                         msg.data.accountData.stream = localStreamRef.current;
-                    } else {
-                        voiceChannel.activeMembers.push(msg.data.accountData);
-                        setServerData({...serverDataRef.current});
-                        chosenVoiceChannelId.current = msg.data.id;
-                    }                    
+                        chosenVoiceChannelId.current = msg.data.id;                  
+                        wsapi_roomStartCall(socket, msg.data.id);
+                    }
+                    voiceChannel.activeMembers.push(msg.data.accountData);
+                    setServerData({...serverDataRef.current});
                 }
                 else if (msg.subtype == 'leave') {
                     let voiceChannel = serverDataRef.current.voiceChannels.find((vc) => vc.id ==  msg.data.id);
@@ -211,7 +222,8 @@ export default function MainPage() {
                         }
                     }
                     setServerData({...serverDataRef.current});
-                    chosenVoiceChannelId.current = null;
+                    if (msg.data.accountData.id == accountDataRef.current.id)
+                        chosenVoiceChannelId.current = null;
                 }
             }
         };
@@ -298,7 +310,7 @@ export default function MainPage() {
                 {renderedComponent == RenderedComponent.NewServerForm && <NewServerForm ws={ws} 
                                                                                         accountData={accountData}/>}
 
-                {(renderedComponent == RenderedComponent.Server || renderedComponent == RenderedComponent.ServerChat || renderedComponent == RenderedComponent.ServerConference
+                {(isServerRendered()
                  ) && <Server ws={ws} 
                         serverData={serverData}
                         callContextMenu={callContextMenu}
@@ -308,6 +320,7 @@ export default function MainPage() {
                         chosenVoiceChannelId={chosenVoiceChannelId.current}
                         renderedComponent={renderedComponent}
                         voiceChannelTabClick={voiceChannelTabClick}
+                        leaveChannelButtonClick={leaveChannelButtonClick}
                     />}
             </div>
             <ContextMenu ref={contextMenu} actions={contextMenuActions}/>

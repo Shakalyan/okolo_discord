@@ -88,6 +88,7 @@ export function Server(props) {
                 </div>
                 <div id="server_control_panel_buttons">
                     <Button variant="dark">Conference</Button>
+                    <Button variant="dark" onClick={props.leaveChannelButtonClick}>Leave</Button>
                     <Button variant="dark">Micro Off</Button>
                     <Button variant="dark">Video On</Button>
                 </div>
