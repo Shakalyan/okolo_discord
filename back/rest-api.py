@@ -14,7 +14,9 @@ dm = DataManager()
 cors = CORS(app, resources={r"*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 sock = Sock(app)
+
 sessions = {}
+rooms = {}
 
 
 with open(".keys/id_rsa", 'r') as f:
@@ -201,9 +203,14 @@ def getAllServersByAccountId():
 def getServerById():
     jwt_decode(getToken())
     server = dm.serverRepo.findById(request.args.get('serverId'))
-    if server:
-        return json.dumps(server, default=lambda o: o.__dict__)
-    return Response(status=404)
+    if not server:
+        return Response(status=404)
+    
+    for voiceChannel in server.voiceChannels:
+        if rooms.get(voiceChannel.id):
+            voiceChannel.activeMembers = rooms.get(voiceChannel.id)
+    
+    return json.dumps(server, default=lambda o: o.__dict__)
 
 
 @app.route("/server/messages")
@@ -221,7 +228,7 @@ def getTextChannelMessagesById():
 def wsSendMsg(id, msg):
     print(id)
     if sessions.get(id):
-        sessions[id].send(json.dumps(msg))
+        sessions[id]['ws'].send(json.dumps(msg))
 
 
 @sock.route('/ws/<token>')
@@ -232,9 +239,13 @@ def ws_connect(ws: Server, token):
     
     accountId = jwt_data['accountId']
     accountLogin = jwt_data['login']
+    accountData = {'id': accountId, 'login': accountLogin}
     if accountId in sessions:
         sessions[accountId].close()
-    sessions[accountId] = ws
+    sessions[accountId] = {
+        'ws': ws,
+        'roomId': None
+    }
     print(sessions)
 
     while True:
@@ -328,8 +339,40 @@ def ws_connect(ws: Server, token):
                     for member in members:
                         wsSendMsg(member.id, msg)
 
+            elif type == 'room':
+                if subtype == 'join':
+                    print('JOIN ROOM')
+                    roomId = data['id']
+                    if not rooms.get(roomId):
+                        rooms[roomId] = []
+                    
+                    rooms[roomId].append(accountData)
+                    sessions[accountId]['roomId'] = roomId
+
+                    msg['data']['accountData'] = accountData
+                    voiceChannel = dm.serverRepo.findVoiceChannel(roomId)
+                    server = dm.serverRepo.findById(voiceChannel.serverId)
+
+                    for member in server.members:
+                        wsSendMsg(member.id, msg)
+                
+                elif subtype == 'leave':
+                    roomId = data['id']
+                    rooms[roomId].remove(accountData)
+                    sessions[accountId]['roomId'] = None
+
+                    msg['data']['accountData'] = accountData
+                    voiceChannel = dm.serverRepo.findVoiceChannel(roomId)
+                    server = dm.serverRepo.findById(voiceChannel.serverId)
+
+                    for member in server.members:
+                        wsSendMsg(member.id, msg)
+                    
+
         except ConnectionClosed:
-            del sessions[jwt_data['accountId']]
+            if sessions[accountId]['roomId']:
+                rooms[sessions[accountId]['roomId']].remove(accountData)
+            del sessions[accountId]
             print('connection closed')
             raise ConnectionClosed        
     

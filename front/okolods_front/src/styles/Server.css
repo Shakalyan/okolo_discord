@@ -7,6 +7,17 @@
     height: 100vh;
     background-color: #202020;
     width: 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+#server_control_panel_channels {
+    flex-grow: 1;
+}
+
+#server_control_panel_buttons {
+    height: 100px;
+    background-color: #202020;
 }
 
 .server_channel_container {
@@ -25,4 +36,20 @@
 
 .server_channel_member_text {
     margin: 0 0 0 30px;
+}
+
+#conference_container {
+    flex-grow: 1;
+    width: 0;
+    overflow-y: scroll;
+}
+
+.conference-tab {
+    margin: 30px 0 0 30px;
+    display: inline-block;
+}
+
+.conference_video {
+    
+    outline: 2px solid white;
 }

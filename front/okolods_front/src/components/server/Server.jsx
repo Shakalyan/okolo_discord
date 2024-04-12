@@ -6,6 +6,8 @@ import Stack from "react-bootstrap/Stack"
 import PopupInput from "../main/PopupInput";
 import { useEffect, useRef } from "react";
 import { api_getTextChannelMessages } from "../../api";
+import Button from "react-bootstrap/Button"
+import { Conference } from "./Conference";
 
 export function Server(props) {
 
@@ -58,25 +60,40 @@ export function Server(props) {
         props.ws.send(JSON.stringify(msg));
     }
 
+    console.log(props.renderedComponent);
+
     return (
         <div id="server_container">
             <div id="server_control_panel">
-                <p onContextMenu={(e) => props.callContextMenu(e, voiceChannelcmActions)} className="server_channel_header_text">Voice channels</p>
-                <Stack style={{marginLeft: "30px"}}>
-                    <PopupInput ref={newVoiceChannelInput} 
-                                onEnter={newVoiceChannel}
-                                placeholder="Enter name"/>
-                    {props.serverData.voiceChannels.map((vc) => <VoiceChannel key={vc.id} name={vc.name} />)}
-                </Stack>
-                <p onContextMenu={(e) => props.callContextMenu(e, textChannelcmActions)} className="server_channel_header_text">Text channels</p>
-                <Stack style={{marginLeft: "30px"}}>
-                    <PopupInput ref={newTextChannelInput} 
-                                onEnter={newTextChannel}
-                                placeholder="Enter name"/>
-                    {props.serverData.textChannels.map((tc) => <TextChannel key={tc.id} name={tc.name} onClick={(e) => props.textChannelTabClick(e, tc.id)}/>)}
-                </Stack>
+                <div id="server_control_panel_channels">
+                    <p onContextMenu={(e) => props.callContextMenu(e, voiceChannelcmActions)} className="server_channel_header_text">Voice channels</p>
+                    <Stack style={{marginLeft: "30px"}}>
+                        <PopupInput ref={newVoiceChannelInput} 
+                                    onEnter={newVoiceChannel}
+                                    placeholder="Enter name"/>
+                        {props.serverData.voiceChannels.map((vc) => <VoiceChannel key={vc.id} 
+                                                                                name={vc.name}
+                                                                                activeMembers={vc.activeMembers}
+                                                                                onClick={(e) => props.voiceChannelTabClick(e, vc.id)}/>)}
+                    </Stack>
+                    <p onContextMenu={(e) => props.callContextMenu(e, textChannelcmActions)} className="server_channel_header_text">Text channels</p>
+                    <Stack style={{marginLeft: "30px"}}>
+                        <PopupInput ref={newTextChannelInput} 
+                                    onEnter={newTextChannel}
+                                    placeholder="Enter name"/>
+                        {props.serverData.textChannels.map((tc) => <TextChannel key={tc.id} 
+                                                                                name={tc.name} 
+                                                                                onClick={(e) => props.textChannelTabClick(e, tc.id)}/>)}
+                    </Stack>
+                </div>
+                <div id="server_control_panel_buttons">
+                    <Button variant="dark">Conference</Button>
+                    <Button variant="dark">Micro Off</Button>
+                    <Button variant="dark">Video On</Button>
+                </div>
             </div>
-            <Chat convType="server" chatId={props.chosenTextChannelId} ws={props.ws} messageList={props.textChannelMessageList} />
+            {props.renderedComponent == 5 && <Chat convType="server" chatId={props.chosenTextChannelId} ws={props.ws} messageList={props.textChannelMessageList} />}
+            {props.renderedComponent == 6 && <Conference voiceChannel={props.serverData.voiceChannels.find((vc) => vc.id == props.chosenVoiceChannelId)}/>}
         </div>
     );
 }

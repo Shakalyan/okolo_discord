@@ -22,11 +22,13 @@ export default function MainPage() {
     const serverDataRef = useRef({});
     const [serverData, setServerData] = useState({});
 
+    const accountDataRef = useRef(null);
     const [accountData, setAccountData] = useState(null);
 
     const [chosenChatId, setChosenChatId] = useState('');
     const [chosenServerId, setChosenServerId] = useState('');
     const chosenTextChannelId = useRef('');
+    const chosenVoiceChannelId = useRef(null);
 
     const messageListRef = useRef([]);
     const [messageList, setMessageList] = useState([]);
@@ -34,12 +36,16 @@ export default function MainPage() {
     const contextMenu = useRef();
     const [contextMenuActions, setContextMenuActions] = useState([]);
 
+    const localStreamRef = useRef(null);
+
     const RenderedComponent = {
         None: 0,
         Chat: 1,
         NewChatForm: 2,
         NewServerForm: 3,
         Server: 4,
+        ServerChat: 5,
+        ServerConference: 6
     };
     const [renderedComponent, _setRenderedComponent] = useState(RenderedComponent.None);
     let renderedComponentInfo = useRef({type: RenderedComponent.None});
@@ -85,12 +91,34 @@ export default function MainPage() {
             if (response.status == 200) {
                 response.json().then((json) => {
                     console.log(json);
-                    setRenderedComponent(RenderedComponent.Server, {channel: "text", id: id});
+                    setRenderedComponent(RenderedComponent.ServerChat, {channel: "text", id: id});
                     setMessageList(json);
                     messageListRef.current = json;
                 })
             }
         })
+    }
+
+    function voiceChannelTabClick(event, id) {
+        if (chosenVoiceChannelId.current) {
+            let msg = {
+                type: "room",
+                subtype: "leave",
+                data: {
+                    id: chosenVoiceChannelId.current
+                }
+            };
+            ws.send(JSON.stringify(msg));
+        }
+        let msg = {
+            type: "room",
+            subtype: "join",
+            data: {
+                id: id
+            }
+        };
+        ws.send(JSON.stringify(msg));
+        setRenderedComponent(RenderedComponent.ServerConference, {channel: "voice", id: id});
     }
 
     function appendToChatList(chat) {
@@ -106,6 +134,11 @@ export default function MainPage() {
     function appendToMessageList(msg) {
         messageListRef.current.push(msg);
         setMessageList([...messageListRef.current]);
+    }
+
+    function setupDevices() {
+        console.log('setupDevice invoked');
+        return navigator.mediaDevices.getUserMedia({ audio: true, video: true });
     }
 
     function initWebSocket() {
@@ -149,6 +182,38 @@ export default function MainPage() {
                     }                    
                 }
             }
+            else if (msg.type == 'room') {
+                if (msg.subtype == 'join') {
+                    let voiceChannel = serverDataRef.current.voiceChannels.find((vc) => vc.id ==  msg.data.id);
+                    if (accountDataRef.current.id == msg.data.accountData.id) {
+                        if (!localStreamRef.current) {
+                            setupDevices().then((stream) => {
+                                localStreamRef.current = stream;
+                                msg.data.accountData.stream = localStreamRef.current;
+                                voiceChannel.activeMembers.push(msg.data.accountData);
+                                setServerData({...serverDataRef.current});
+                                chosenVoiceChannelId.current = msg.data.id;
+                            })
+                        }
+                        msg.data.accountData.stream = localStreamRef.current;
+                    } else {
+                        voiceChannel.activeMembers.push(msg.data.accountData);
+                        setServerData({...serverDataRef.current});
+                        chosenVoiceChannelId.current = msg.data.id;
+                    }                    
+                }
+                else if (msg.subtype == 'leave') {
+                    let voiceChannel = serverDataRef.current.voiceChannels.find((vc) => vc.id ==  msg.data.id);
+                    for (let i = 0; i < voiceChannel.activeMembers.length; ++i) {
+                        if (voiceChannel.activeMembers[i].id == msg.data.accountData.id) {
+                            voiceChannel.activeMembers.splice(i, 1);
+                            break;
+                        }
+                    }
+                    setServerData({...serverDataRef.current});
+                    chosenVoiceChannelId.current = null;
+                }
+            }
         };
         setWs(socket);
     }
@@ -158,6 +223,7 @@ export default function MainPage() {
             if (response.status == 200) {
                 response.json().then((json) => {
                     setAccountData(json);
+                    accountDataRef.current = json;
                 })
             }
         });
@@ -232,13 +298,17 @@ export default function MainPage() {
                 {renderedComponent == RenderedComponent.NewServerForm && <NewServerForm ws={ws} 
                                                                                         accountData={accountData}/>}
 
-                {renderedComponent == RenderedComponent.Server        && <Server ws={ws} 
-                                                                                 serverData={serverData}
-                                                                                 callContextMenu={callContextMenu}
-                                                                                 textChannelTabClick={textChannelTabClick}
-                                                                                 textChannelMessageList={messageList}
-                                                                                 chosenTextChannelId={chosenTextChannelId.current}
-                                                                                 />}
+                {(renderedComponent == RenderedComponent.Server || renderedComponent == RenderedComponent.ServerChat || renderedComponent == RenderedComponent.ServerConference
+                 ) && <Server ws={ws} 
+                        serverData={serverData}
+                        callContextMenu={callContextMenu}
+                        textChannelTabClick={textChannelTabClick}
+                        textChannelMessageList={messageList}
+                        chosenTextChannelId={chosenTextChannelId.current}
+                        chosenVoiceChannelId={chosenVoiceChannelId.current}
+                        renderedComponent={renderedComponent}
+                        voiceChannelTabClick={voiceChannelTabClick}
+                    />}
             </div>
             <ContextMenu ref={contextMenu} actions={contextMenuActions}/>
         </div>

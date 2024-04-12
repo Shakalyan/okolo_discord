@@ -108,6 +108,7 @@ class VoiceChannel:
 
     def __init__(self, queryResult):
         self.id, self.serverId, self.name = queryResult
+        self.activeMembers = []
 
 
 class DataManager:
@@ -256,3 +257,7 @@ class ServerRepo():
     def findTextChannel(self, textChannelId):
         textChannel = _eq_one(self.conn, f"SELECT * FROM text_channel WHERE id = '{textChannelId}'")
         return TextChannel(textChannel)
+    
+    def findVoiceChannel(self, voiceChannelId):
+        voiceChannel = _eq_one(self.conn, f"SELECT * FROM voice_channel WHERE id = '{voiceChannelId}'")
+        return VoiceChannel(voiceChannel)
