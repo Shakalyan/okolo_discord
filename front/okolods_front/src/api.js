@@ -115,12 +115,55 @@ export function wsapi_joinVoiceChat(ws, chatId) {
     ws.send(JSON.stringify(msg));
 }
 
-export function wsapi_roomStartCall(ws, chatId) {
+export function wsapi_webrtcStartCall(ws, chatId, senderId) {
     let msg = {
         type: "webrtc",
         subtype: "startCall",
         data: {
-            id: chatId
+            roomId: chatId,
+            senderId: senderId
+        }
+    };
+    ws.send(JSON.stringify(msg));
+}
+
+export function wsapi_webrtcOffer(ws, chatId, senderId, receiverId, dsc) {
+    let msg = {
+        type: "webrtc",
+        subtype: "offer",
+        data: {
+            roomId: chatId,
+            senderId: senderId,
+            receiverId: receiverId,
+            dsc: dsc
+        }
+    };
+    ws.send(JSON.stringify(msg));
+}
+
+export function wsapi_webrtcAnswer(ws, chatId, senderId, receiverId, dsc) {
+    let msg = {
+        type: "webrtc",
+        subtype: "answer",
+        data: {
+            roomId: chatId,
+            senderId: senderId,
+            receiverId: receiverId,
+            dsc: dsc
+        }
+    };
+    ws.send(JSON.stringify(msg));
+}
+
+export function wsapi_webrtcCandidate(ws, chatId, senderId, receiverId, candidate) {
+    let msg = {
+        type: "webrtc",
+        subtype: "candidate",
+        data: {
+            roomId: chatId,
+            senderId: senderId,
+            receiverId: receiverId,
+            candidate: candidate
         }
     };
     ws.send(JSON.stringify(msg));

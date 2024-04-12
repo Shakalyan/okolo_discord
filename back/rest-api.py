@@ -246,7 +246,7 @@ def ws_connect(ws: Server, token):
         'ws': ws,
         'roomId': None
     }
-    print(sessions)
+    print(f'NEW CLIENT CONNECTED ({accountData}) SESSIONS: {sessions}')
 
     while True:
         try:
@@ -369,16 +369,16 @@ def ws_connect(ws: Server, token):
                         wsSendMsg(member.id, msg)
             
             elif type == 'webrtc':
-                voiceChannel = dm.serverRepo.findVoiceChannel(data['id'])
-                server = dm.serverRepo.findById(voiceChannel.serverId)
-
-                for member in server.members:
-                    if member.id != accountId:
-                        wsSendMsg(member.id, msg)
+                for member in rooms[data['roomId']]:
+                    if member['id'] != accountId:
+                        wsSendMsg(member['id'], msg)
                     
 
         except ConnectionClosed:
-            if sessions[accountId]['roomId']:
+            print(f'\n\n\n{accountData} CLIENT CONNECTION CLOSING...')
+            print(f'SESSIONS: {sessions}')
+            print(f'ROOMS: {rooms}\n')
+            if sessions.get(accountId) and sessions[accountId]['roomId']:
                 print("CONNECTION CLOSED, SEND LEAVE MESSAGE")
                 roomId = sessions[accountId]['roomId']
                 rooms[roomId].remove(accountData)
@@ -398,8 +398,11 @@ def ws_connect(ws: Server, token):
                         wsSendMsg(member.id, msg)
                 print('LEAVE MESSAGE SENT')
 
-            del sessions[accountId]
+            if sessions.get(accountId):
+                del sessions[accountId]
             print(f'{accountLogin} CLIENT CONNECTION CLOSED')
+            print(f'SESSIONS: {sessions}')
+            print(f'ROOMS: {rooms}\n\n\n')
             raise ConnectionClosed        
     
 

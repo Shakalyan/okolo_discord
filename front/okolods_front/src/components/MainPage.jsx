@@ -1,7 +1,7 @@
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import '../styles/MainPage.css'
-import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, api_getServerById, api_getTextChannelMessages, backendHost, wsapi_joinVoiceChat, wsapi_leaveVoiceChat, wsapi_roomStartCall } from "../api.js";
+import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, api_getServerById, api_getTextChannelMessages, backendHost, wsapi_joinVoiceChat, wsapi_leaveVoiceChat, wsapi_webrtcAnswer, wsapi_webrtcCandidate, wsapi_webrtcOffer, wsapi_webrtcStartCall } from "../api.js";
 import NewChatForm from "./NewChatForm.jsx";
 import { NewServerForm } from './NewServerForm.jsx';
 import { useEffect, useState, useRef } from "react";
@@ -37,6 +37,7 @@ export default function MainPage() {
     const [contextMenuActions, setContextMenuActions] = useState([]);
 
     const localStreamRef = useRef(null);
+    const peerConnections = useRef([]);
 
     const RenderedComponent = {
         None: 0,
@@ -141,13 +142,36 @@ export default function MainPage() {
 
     function setupDevices() {
         console.log('setupDevice invoked');
-        return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        return navigator.mediaDevices.getUserMedia({ audio: true, video: true });
     }
 
     function isServerRendered() {
         return  renderedComponent == RenderedComponent.Server || 
                 renderedComponent == RenderedComponent.ServerChat ||
                 renderedComponent == RenderedComponent.ServerConference;
+    }
+
+    function createPeerConnection(socket, roomId, interlocutorId) {
+        let peerConnection = new RTCPeerConnection();
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                wsapi_webrtcCandidate(socket, roomId, accountDataRef.current.id, interlocutorId, event.candidate);
+            }
+        };
+        localStreamRef.current.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStreamRef.current);
+        });
+        peerConnection.addEventListener("track", (event) => {
+            let voiceChannel = serverDataRef.current.voiceChannels.find((vc) => vc.id == roomId);
+            let member = voiceChannel.activeMembers.find((am) => am.id == interlocutorId);
+            member.stream = event.streams[0];
+            setServerData({...serverDataRef.current})
+        });
+        peerConnections.current.push({
+            interlocutorId: interlocutorId,
+            peerConnection: peerConnection
+        });
+        return peerConnection;
     }
 
     function initWebSocket() {
@@ -195,6 +219,7 @@ export default function MainPage() {
                 if (msg.subtype == 'join') {
                     let voiceChannel = serverDataRef.current.voiceChannels.find((vc) => vc.id ==  msg.data.id);
                     if (accountDataRef.current.id == msg.data.accountData.id) {
+                        msg.data.accountData.muteMic = true;
                         if (!localStreamRef.current) {
                             setupDevices().then((stream) => {
                                 localStreamRef.current = stream;
@@ -202,14 +227,15 @@ export default function MainPage() {
                                 voiceChannel.activeMembers.push(msg.data.accountData);
                                 setServerData({...serverDataRef.current});
                                 chosenVoiceChannelId.current = msg.data.id;
-                                wsapi_roomStartCall(socket, msg.data.id);
+                                wsapi_webrtcStartCall(socket, msg.data.id, accountDataRef.current.id);
                             })
                             return;
                         }
                         msg.data.accountData.stream = localStreamRef.current;
                         chosenVoiceChannelId.current = msg.data.id;                  
-                        wsapi_roomStartCall(socket, msg.data.id);
+                        wsapi_webrtcStartCall(socket, msg.data.id, accountDataRef.current.id);
                     }
+                    msg.data.accountData.muteMic = false;
                     voiceChannel.activeMembers.push(msg.data.accountData);
                     setServerData({...serverDataRef.current});
                 }
@@ -221,9 +247,47 @@ export default function MainPage() {
                             break;
                         }
                     }
+                    for (let i = 0; i < peerConnections.current.length; ++i) {
+                        if (peerConnections.current[i].interlocutorId == msg.data.accountData.id) {
+                            peerConnections.current.splice(i, 1);
+                            break;
+                        }
+                    }
                     setServerData({...serverDataRef.current});
-                    if (msg.data.accountData.id == accountDataRef.current.id)
+                    if (msg.data.accountData.id == accountDataRef.current.id) {
                         chosenVoiceChannelId.current = null;
+                        peerConnections.current = [];
+                    }
+                        
+                }
+            }
+            else if (msg.type == 'webrtc') {
+                if (msg.subtype == 'startCall') {
+                    console.log('StartCall');
+                    let peerConnection = createPeerConnection(socket, msg.data.roomId, msg.data.senderId);
+                    peerConnection.createOffer().then(dsc => {
+                        peerConnection.setLocalDescription(dsc);
+                        wsapi_webrtcOffer(socket, msg.data.roomId, accountDataRef.current.id, msg.data.senderId, dsc);
+                    });                    
+                }
+                else if (msg.subtype == 'offer') {
+                    if (msg.data.receiverId != accountDataRef.current.id)
+                        return
+                    console.log('offer');
+                    let peerConnection = createPeerConnection(socket, msg.data.roomId, msg.data.senderId);
+                    peerConnection.setRemoteDescription(msg.data.dsc).then(async () => {
+                        let dsc = await peerConnection.createAnswer();
+                        peerConnection.setLocalDescription(dsc);
+                        wsapi_webrtcAnswer(socket, msg.data.roomId, accountDataRef.current.id, msg.data.senderId, dsc);
+                    });
+                }
+                else if (msg.subtype == 'answer') {
+                    let peerConnection = peerConnections.current.find((pc) => pc.interlocutorId == msg.data.senderId).peerConnection;
+                    peerConnection.setRemoteDescription(msg.data.dsc);
+                }
+                else if (msg.subtype == 'candidate') {
+                    let peerConnection = peerConnections.current.find((pc) => pc.interlocutorId == msg.data.senderId).peerConnection;
+                    peerConnection.addIceCandidate(msg.data.candidate);
                 }
             }
         };

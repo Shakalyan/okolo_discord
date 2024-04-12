@@ -5,11 +5,12 @@ export function ConferenceTab(props) {
     const videoRef = useRef();
 
     useEffect(() => {
+        if (!props.memberData.stream)
+            return;
         videoRef.current.srcObject = props.memberData.stream;
-    }, [videoRef.current])
-
-
-    
+        videoRef.current.srcObject.getAudioTracks()[0].enabled = !props.memberData.muteMic;
+    }, [props.memberData.stream])
+   
 
     console.log(props.memberData);
     return (
