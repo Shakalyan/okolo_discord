@@ -74,7 +74,7 @@ export function Server(props) {
                         {props.serverData.voiceChannels.map((vc) => <VoiceChannel key={vc.id} 
                                                                                 name={vc.name}
                                                                                 activeMembers={vc.activeMembers}
-                                                                                onClick={(e) => props.voiceChannelTabClick(e, vc.id)}/>)}
+                                                                                onClick={(e) => props.callbacks.voiceChannelTabClick(e, vc.id)}/>)}
                     </Stack>
                     <p onContextMenu={(e) => props.callContextMenu(e, textChannelcmActions)} className="server_channel_header_text">Text channels</p>
                     <Stack style={{marginLeft: "30px"}}>
@@ -83,12 +83,12 @@ export function Server(props) {
                                     placeholder="Enter name"/>
                         {props.serverData.textChannels.map((tc) => <TextChannel key={tc.id} 
                                                                                 name={tc.name} 
-                                                                                onClick={(e) => props.textChannelTabClick(e, tc.id)}/>)}
+                                                                                onClick={(e) => props.callbacks.textChannelTabClick(e, tc.id)}/>)}
                     </Stack>
                 </div>
                 <div id="server_control_panel_buttons">
-                    <Button variant="dark">Conference</Button>
-                    <Button variant="dark" onClick={props.leaveChannelButtonClick}>Leave</Button>
+                    <Button variant="dark" onClick={props.callbacks.conferenceButtonClick}>Conference</Button>
+                    <Button variant="dark" onClick={props.callbacks.leaveChannelButtonClick}>Leave</Button>
                     <Button variant="dark">Micro Off</Button>
                     <Button variant="dark">Video On</Button>
                 </div>

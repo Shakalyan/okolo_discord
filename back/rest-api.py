@@ -352,6 +352,7 @@ def ws_connect(ws: Server, token):
                     msg['data']['accountData'] = accountData
                     voiceChannel = dm.serverRepo.findVoiceChannel(roomId)
                     server = dm.serverRepo.findById(voiceChannel.serverId)
+                    msg['data']['serverId'] = server.id
 
                     for member in server.members:
                         wsSendMsg(member.id, msg)
@@ -364,6 +365,7 @@ def ws_connect(ws: Server, token):
                     msg['data']['accountData'] = accountData
                     voiceChannel = dm.serverRepo.findVoiceChannel(roomId)
                     server = dm.serverRepo.findById(voiceChannel.serverId)
+                    msg['data']['serverId'] = server.id
 
                     for member in server.members:
                         wsSendMsg(member.id, msg)

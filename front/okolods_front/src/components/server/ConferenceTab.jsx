@@ -8,7 +8,9 @@ export function ConferenceTab(props) {
         if (!props.memberData.stream)
             return;
         videoRef.current.srcObject = props.memberData.stream;
-        videoRef.current.srcObject.getAudioTracks()[0].enabled = !props.memberData.muteMic;
+        if (props.memberData.muteMic) {
+            videoRef.current.volume = 0;
+        }
     }, [props.memberData.stream])
    
 
@@ -21,7 +23,7 @@ export function ConferenceTab(props) {
                 autoPlay
                 style={{width: 320, height: 240}}
             />
-            <p>Some text</p>
+            <p>{props.memberData.login}</p>
         </div>
     );
 }

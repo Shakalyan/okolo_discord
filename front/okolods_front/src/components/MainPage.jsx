@@ -9,35 +9,16 @@ import Chat from "./chat/Chat.jsx";
 import { MsList } from "./main/MsList.jsx";
 import { Server } from './server/Server.jsx';
 import ContextMenu from './general/ContextMenu.jsx';
+import { useRenderedRef } from '../fns.js';
 
 export default function MainPage() {
 
-    const [ws, setWs] = useState(null);
 
-    const chatListRef = useRef([]);
-    const [chatList, setChatList] = useState([]);
-
-    const serverListRef = useRef([]);
-    const [serverList, setServerList] = useState([]);
-    const serverDataRef = useRef({});
-    const [serverData, setServerData] = useState({});
-
-    const accountDataRef = useRef(null);
-    const [accountData, setAccountData] = useState(null);
-
-    const [chosenChatId, setChosenChatId] = useState('');
-    const [chosenServerId, setChosenServerId] = useState('');
-    const chosenTextChannelId = useRef('');
-    const chosenVoiceChannelId = useRef(null);
-
-    const messageListRef = useRef([]);
-    const [messageList, setMessageList] = useState([]);
-
+    //GENERAL
+    const ws = useRef(null);
+    const accountData = useRenderedRef({});
     const contextMenu = useRef();
     const [contextMenuActions, setContextMenuActions] = useState([]);
-
-    const localStreamRef = useRef(null);
-    const peerConnections = useRef([]);
 
     const RenderedComponent = {
         None: 0,
@@ -48,124 +29,125 @@ export default function MainPage() {
         ServerChat: 5,
         ServerConference: 6
     };
-    const [renderedComponent, _setRenderedComponent] = useState(RenderedComponent.None);
-    let renderedComponentInfo = useRef({type: RenderedComponent.None});
-    function setRenderedComponent(component, info) {
-        _setRenderedComponent(component);
-        renderedComponentInfo.current = {
-            type: component,
-            info: info
-        };
-    }
-    
+    const renderedComponent = useRenderedRef(RenderedComponent.None);
+
+    // LEFT PANEL
+    const chatList = useRenderedRef([]);
+    const serverList = useRenderedRef([]);
+
+    // SERVER
+    const serverData = useRenderedRef({});
+    const textChannelData = useRenderedRef({});
+    const voiceChannelData = useRenderedRef({});
+    const localStreamRef = useRef(null);
+    const peerConnections = useRef([]);
+
+    // CHAT
+    const chatData = useRenderedRef({});
+
 
     function chatTabClick(event, id) {
-        setChosenChatId(id);
         api_getAllMessagesByChatId(id).then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
-                    setRenderedComponent(RenderedComponent.Chat, {id: id});
-                    setMessageList(json);
-                    messageListRef.current = json;
+                    renderedComponent.set(RenderedComponent.Chat).update();
+                    chatData
+                    .set({
+                        id: id,
+                        messageList: json
+                    })
+                    .update();
                 })
             }
         })
     }
 
     function serverTabClick(event, id) {
-        setChosenServerId(id);
         api_getServerById(id).then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
-                    console.log(json);
-                    serverDataRef.current = json;
-                    setServerData(json);
-                    setRenderedComponent(RenderedComponent.Server, {id: id});
+                    serverData.set(json);
+                    serverData.update();
+                    renderedComponent.set(RenderedComponent.Server).update();
                 })
             }
         })
     }
 
-    function textChannelTabClick(event, id) {
-        chosenTextChannelId.current = id;
-        api_getTextChannelMessages(id).then((response) => {
-            if (response.status == 200) {
-                response.json().then((json) => {
-                    console.log(json);
-                    setRenderedComponent(RenderedComponent.ServerChat, {channel: "text", id: id});
-                    setMessageList(json);
-                    messageListRef.current = json;
-                })
+    const serverCallbacks = {
+        textChannelTabClick: (event, id) => {
+            api_getTextChannelMessages(id).then((response) => {
+                if (response.status == 200) {
+                    response.json().then((json) => {
+                        renderedComponent.set(RenderedComponent.ServerChat).update();
+                        textChannelData
+                        .set({
+                            id: id,
+                            messageList: json
+                        })
+                        .update();
+                    })
+                }
+            })
+        },
+    
+        voiceChannelTabClick: (event, id) => {
+            if (voiceChannelData.get().id == id) {
+                console.log("ALREADY IN THAT VOICE CHAT")
+                return;
             }
-        })
-    }
+            if (voiceChannelData.get().id) {
+                console.log("LEAVING PREVIOUS VOICE CHAT....")
+                wsapi_leaveVoiceChat(ws.current, voiceChannelData.get().id);
+            }
+            wsapi_joinVoiceChat(ws.current, id);
+            renderedComponent.set(RenderedComponent.ServerConference).update();
+        },
+    
+        leaveChannelButtonClick: (event) => {
+            if (!voiceChannelData.get().id)
+                return;
+    
+            localStreamRef.current.getTracks().forEach(function(track) {
+                track.stop();
+            });
+            renderedComponent.set(RenderedComponent.Server).update();
+            wsapi_leaveVoiceChat(ws.current, voiceChannelData.get().id);
+            localStreamRef.current = null;
+        },
 
-    function voiceChannelTabClick(event, id) {
-        if (chosenVoiceChannelId.current == id) {
-            console.log("ALREADY IN THAT VOICE CHAT")
-            return;
+        conferenceButtonClick: (event) => {
+            renderedComponent.set(RenderedComponent.ServerConference).update();
         }
-        if (chosenVoiceChannelId.current) {
-            console.log("LEAVING PREVIOUS VOICE CHAT....")
-            wsapi_leaveVoiceChat(ws, chosenVoiceChannelId.current);
-        }
-        wsapi_joinVoiceChat(ws, id);
-        setRenderedComponent(RenderedComponent.ServerConference, {channel: "voice", id: id});
-    }
+    };
 
-    function leaveChannelButtonClick(event) {
-        if (!chosenVoiceChannelId.current)
-            return;
-
-        localStreamRef.current.getTracks().forEach(function(track) {
-            track.stop();
-        });
-        setRenderedComponent(RenderedComponent.Server, {});
-        wsapi_leaveVoiceChat(ws, chosenVoiceChannelId.current);
-        localStreamRef.current = null;
-    }
-
-    function appendToChatList(chat) {
-        chatListRef.current.push(chat);
-        setChatList([...chatListRef.current]);
-    }
-
-    function appendToServerList(server) {
-        serverListRef.current.push(server);
-        setServerList([...serverListRef.current]);
-    }
-
-    function appendToMessageList(msg) {
-        messageListRef.current.push(msg);
-        setMessageList([...messageListRef.current]);
-    }
-
+    
     function setupDevices() {
         console.log('setupDevice invoked');
         return navigator.mediaDevices.getUserMedia({ audio: true, video: true });
     }
 
     function isServerRendered() {
-        return  renderedComponent == RenderedComponent.Server || 
-                renderedComponent == RenderedComponent.ServerChat ||
-                renderedComponent == RenderedComponent.ServerConference;
+        return  renderedComponent.get() == RenderedComponent.Server || 
+                renderedComponent.get() == RenderedComponent.ServerChat ||
+                renderedComponent.get() == RenderedComponent.ServerConference;
     }
 
     function createPeerConnection(socket, roomId, interlocutorId) {
         let peerConnection = new RTCPeerConnection();
         peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                wsapi_webrtcCandidate(socket, roomId, accountDataRef.current.id, interlocutorId, event.candidate);
+                wsapi_webrtcCandidate(socket, roomId, accountData.get().id, interlocutorId, event.candidate);
             }
         };
         localStreamRef.current.getTracks().forEach(track => {
             peerConnection.addTrack(track, localStreamRef.current);
         });
         peerConnection.addEventListener("track", (event) => {
-            let voiceChannel = serverDataRef.current.voiceChannels.find((vc) => vc.id == roomId);
+            let voiceChannel = serverData.get().voiceChannels.find((vc) => vc.id == roomId);
             let member = voiceChannel.activeMembers.find((am) => am.id == interlocutorId);
             member.stream = event.streams[0];
-            setServerData({...serverDataRef.current})
+            serverData.update();
         });
         peerConnections.current.push({
             interlocutorId: interlocutorId,
@@ -185,80 +167,95 @@ export default function MainPage() {
             
             if (msg.type == 'chat') {
                 if (msg.subtype == 'new') {
-                    appendToChatList(msg.data);
+                    chatList.get().push(msg.data);
+                    chatList.update();
                 }
                 if (msg.subtype == 'newMessage') {
-                    if (renderedComponentInfo.current.type == RenderedComponent.Chat &&
-                        renderedComponentInfo.current.info.id == msg.data.chatId) 
+                    if (renderedComponent.get() == RenderedComponent.Chat &&
+                        chatData.get().id == msg.data.chatId) 
                     {
-                        appendToMessageList(msg.data);
+                        chatData.get().messageList.push(msg.data);
+                        chatData.update();
                     }
                 }
             }
-            else if (msg.type == 'server' && isServerRendered()) {
+            else if (msg.type == 'server') {
                 if (msg.subtype == 'new') {
-                    appendToServerList(msg.data);
+                    serverList.get().push(msg.data);
+                    serverList.update();
                 }
-                else if (msg.subtype == 'newVoiceChannel') {
-                    serverDataRef.current.voiceChannels.push(msg.data);
-                    setServerData({...serverDataRef.current});
+                else if (msg.subtype == 'newVoiceChannel' &&
+                         isServerRendered() &&
+                         serverData.get().id == msg.data.serverId) {
+                    serverData.get().voiceChannels.push(msg.data);
+                    serverData.update();
                 }
-                else if (msg.subtype == 'newTextChannel') {
-                    serverDataRef.current.textChannels.push(msg.data);
-                    setServerData({...serverDataRef.current});
+                else if (msg.subtype == 'newTextChannel' &&
+                         isServerRendered() &&
+                         serverData.get().id == msg.data.serverId) {
+                    serverData.get().textChannels.push(msg.data);
+                    serverData.update();
                 }
                 else if (msg.subtype == 'newMessage') {
-                    if (renderedComponentInfo.current.type == RenderedComponent.Server &&
-                        renderedComponentInfo.current.info.channel == 'text' &&
-                        renderedComponentInfo.current.info.id == msg.data.chatId) {
-                            appendToMessageList(msg.data);
+                    if (renderedComponent.get() == RenderedComponent.ServerChat &&
+                        textChannelData.get().id == msg.data.chatId) {
+                            textChannelData.get().messageList.push(msg.data);
+                            textChannelData.update();
                     }                    
                 }
             }
             else if (msg.type == 'room') {
-                if (msg.subtype == 'join') {
-                    let voiceChannel = serverDataRef.current.voiceChannels.find((vc) => vc.id ==  msg.data.id);
-                    if (accountDataRef.current.id == msg.data.accountData.id) {
+                if (msg.subtype == 'join' &&
+                    isServerRendered() &&
+                    serverData.get().id == msg.data.serverId) 
+                    {
+                    let voiceChannel = serverData.get().voiceChannels.find((vc) => vc.id ==  msg.data.id);
+                    if (accountData.get().id == msg.data.accountData.id) {
                         msg.data.accountData.muteMic = true;
                         if (!localStreamRef.current) {
                             setupDevices().then((stream) => {
                                 localStreamRef.current = stream;
                                 msg.data.accountData.stream = localStreamRef.current;
                                 voiceChannel.activeMembers.push(msg.data.accountData);
-                                setServerData({...serverDataRef.current});
-                                chosenVoiceChannelId.current = msg.data.id;
-                                wsapi_webrtcStartCall(socket, msg.data.id, accountDataRef.current.id);
+                                serverData.update();
+                                voiceChannelData.get().id = msg.data.id;
+                                wsapi_webrtcStartCall(socket, msg.data.id, accountData.get().id);
                             })
                             return;
                         }
                         msg.data.accountData.stream = localStreamRef.current;
-                        chosenVoiceChannelId.current = msg.data.id;                  
-                        wsapi_webrtcStartCall(socket, msg.data.id, accountDataRef.current.id);
+                        voiceChannelData.get().id = msg.data.id;                  
+                        wsapi_webrtcStartCall(socket, msg.data.id, accountData.get().id);
                     }
                     msg.data.accountData.muteMic = false;
                     voiceChannel.activeMembers.push(msg.data.accountData);
-                    setServerData({...serverDataRef.current});
+                    serverData.update();
                 }
                 else if (msg.subtype == 'leave') {
-                    let voiceChannel = serverDataRef.current.voiceChannels.find((vc) => vc.id ==  msg.data.id);
-                    for (let i = 0; i < voiceChannel.activeMembers.length; ++i) {
-                        if (voiceChannel.activeMembers[i].id == msg.data.accountData.id) {
-                            voiceChannel.activeMembers.splice(i, 1);
-                            break;
+                    if (isServerRendered()) {
+                        let voiceChannel = serverData.get().voiceChannels.find((vc) => vc.id ==  msg.data.id);
+                        for (let i = 0; i < voiceChannel.activeMembers.length; ++i) {
+                            if (voiceChannel.activeMembers[i].id == msg.data.accountData.id) {
+                                voiceChannel.activeMembers.splice(i, 1);
+                                break;
+                            }
                         }
+                        serverData.update();
                     }
-                    for (let i = 0; i < peerConnections.current.length; ++i) {
-                        if (peerConnections.current[i].interlocutorId == msg.data.accountData.id) {
-                            peerConnections.current.splice(i, 1);
-                            break;
+                    
+                    if (voiceChannelData.get().id == msg.data.id) {
+                        for (let i = 0; i < peerConnections.current.length; ++i) {
+                            if (peerConnections.current[i].interlocutorId == msg.data.accountData.id) {
+                                peerConnections.current.splice(i, 1);
+                                break;
+                            }
                         }
-                    }
-                    setServerData({...serverDataRef.current});
-                    if (msg.data.accountData.id == accountDataRef.current.id) {
-                        chosenVoiceChannelId.current = null;
-                        peerConnections.current = [];
-                    }
                         
+                        if (msg.data.accountData.id == accountData.get().id) {
+                            voiceChannelData.get().id = null;
+                            peerConnections.current = [];
+                        }
+                    }                        
                 }
             }
             else if (msg.type == 'webrtc') {
@@ -267,18 +264,18 @@ export default function MainPage() {
                     let peerConnection = createPeerConnection(socket, msg.data.roomId, msg.data.senderId);
                     peerConnection.createOffer().then(dsc => {
                         peerConnection.setLocalDescription(dsc);
-                        wsapi_webrtcOffer(socket, msg.data.roomId, accountDataRef.current.id, msg.data.senderId, dsc);
+                        wsapi_webrtcOffer(socket, msg.data.roomId, accountData.get().id, msg.data.senderId, dsc);
                     });                    
                 }
                 else if (msg.subtype == 'offer') {
-                    if (msg.data.receiverId != accountDataRef.current.id)
+                    if (msg.data.receiverId != accountData.get().id)
                         return
                     console.log('offer');
                     let peerConnection = createPeerConnection(socket, msg.data.roomId, msg.data.senderId);
                     peerConnection.setRemoteDescription(msg.data.dsc).then(async () => {
                         let dsc = await peerConnection.createAnswer();
                         peerConnection.setLocalDescription(dsc);
-                        wsapi_webrtcAnswer(socket, msg.data.roomId, accountDataRef.current.id, msg.data.senderId, dsc);
+                        wsapi_webrtcAnswer(socket, msg.data.roomId, accountData.get().id, msg.data.senderId, dsc);
                     });
                 }
                 else if (msg.subtype == 'answer') {
@@ -291,15 +288,14 @@ export default function MainPage() {
                 }
             }
         };
-        setWs(socket);
+        ws.current = socket;
     }
 
     function loadInitialData() {
         api_accountEcho().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
-                    setAccountData(json);
-                    accountDataRef.current = json;
+                    accountData.set(json);
                 })
             }
         });
@@ -307,8 +303,8 @@ export default function MainPage() {
         api_getAccountChats().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
-                    setChatList(json);
-                    chatListRef.current = json;
+                    chatList.set(json);
+                    chatList.update();
                 });
             }
         });
@@ -316,8 +312,8 @@ export default function MainPage() {
         api_getAccountServers().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
-                    setServerList(json);
-                    serverListRef.current = json;
+                    serverList.set(json);
+                    serverList.update();
                 })
             }
         })
@@ -351,40 +347,38 @@ export default function MainPage() {
                     fill
                 >
                     <Tab eventKey="messages" title="Messages">
-                        <MsList list={chatList}
-                                newTabClick={() => setRenderedComponent(RenderedComponent.NewChatForm, {})}
+                        <MsList list={chatList.get()}
+                                newTabClick={() => renderedComponent.set(RenderedComponent.NewChatForm).update()}
                                 tabClick={chatTabClick}/>
                     </Tab>
                     <Tab eventKey="servers" title="Servers">
-                        <MsList list={serverList}
-                                newTabClick={() => setRenderedComponent(RenderedComponent.NewServerForm, {})}
+                        <MsList list={serverList.get()}
+                                newTabClick={() => renderedComponent.set(RenderedComponent.NewServerForm).update()}
                                 tabClick={serverTabClick}/>
                     </Tab>
                 </Tabs>
             </div>
             <div id="main_right_area">
-                {renderedComponent == RenderedComponent.NewChatForm   && <NewChatForm ws={ws} 
-                                                                                      accountData={accountData}/>}
+                {renderedComponent.get() == RenderedComponent.NewChatForm   && <NewChatForm ws={ws.current} 
+                                                                                      accountData={accountData.get()}/>}
 
-                {renderedComponent == RenderedComponent.Chat          && <Chat    chatId={chosenChatId} 
-                                                                                  ws={ws} 
-                                                                                  messageList={messageList}
+                {renderedComponent.get() == RenderedComponent.Chat          && <Chat    chatId={chatData.get().id} 
+                                                                                  ws={ws.current} 
+                                                                                  messageList={chatData.get().messageList}
                                                                                   convType="chat"/>}
 
-                {renderedComponent == RenderedComponent.NewServerForm && <NewServerForm ws={ws} 
-                                                                                        accountData={accountData}/>}
+                {renderedComponent.get() == RenderedComponent.NewServerForm && <NewServerForm ws={ws.current} 
+                                                                                        accountData={accountData.get()}/>}
 
                 {(isServerRendered()
-                 ) && <Server ws={ws} 
-                        serverData={serverData}
+                 ) && <Server ws={ws.current} 
+                        serverData={serverData.get()}
                         callContextMenu={callContextMenu}
-                        textChannelTabClick={textChannelTabClick}
-                        textChannelMessageList={messageList}
-                        chosenTextChannelId={chosenTextChannelId.current}
-                        chosenVoiceChannelId={chosenVoiceChannelId.current}
-                        renderedComponent={renderedComponent}
-                        voiceChannelTabClick={voiceChannelTabClick}
-                        leaveChannelButtonClick={leaveChannelButtonClick}
+                        callbacks={serverCallbacks}
+                        textChannelMessageList={textChannelData.get().messageList}
+                        chosenTextChannelId={textChannelData.get().id}
+                        chosenVoiceChannelId={voiceChannelData.get().id}
+                        renderedComponent={renderedComponent.get()}
                     />}
             </div>
             <ContextMenu ref={contextMenu} actions={contextMenuActions}/>
