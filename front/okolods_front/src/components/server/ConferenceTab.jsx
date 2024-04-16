@@ -8,9 +8,7 @@ export function ConferenceTab(props) {
         if (!props.memberData.stream)
             return;
         videoRef.current.srcObject = props.memberData.stream;
-        if (props.memberData.muteMic) {
-            videoRef.current.volume = 0;
-        }
+        videoRef.current.volume = props.memberData.params.volume;
     }, [props.memberData.stream])
    
 

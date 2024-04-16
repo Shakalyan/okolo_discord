@@ -231,6 +231,26 @@ def wsSendMsg(id, msg):
         sessions[id]['ws'].send(json.dumps(msg, default=lambda o: o.__dict__))
 
 
+def close_session(accountData):
+    accountId = accountData['id']
+    if sessions.get(accountId) and sessions[accountId]['roomId']:
+        roomId = sessions[accountId]['roomId']
+        rooms[roomId].remove(accountData)
+        msg = {
+            'type': 'room',
+            'subtype': 'leave',
+            'data': {
+                'id': roomId,
+                'accountData': accountData
+            }
+        }
+        voiceChannel = dm.serverRepo.findVoiceChannel(roomId)
+        server = dm.serverRepo.findById(voiceChannel.serverId)
+        for member in server.members:
+            if member.id != accountId:
+                wsSendMsg(member.id, msg)
+
+
 @sock.route('/ws/<token>')
 def ws_connect(ws: Server, token):
     jwt_data = jwt_decode(token)
@@ -241,6 +261,7 @@ def ws_connect(ws: Server, token):
     accountLogin = jwt_data['login']
     accountData = {'id': accountId, 'login': accountLogin}
     if accountId in sessions:
+        print('\n\nACCOUNT ID HIT\n\n')
         sessions[accountId]['ws'].close()
     sessions[accountId] = {
         'ws': ws,
@@ -308,6 +329,7 @@ def ws_connect(ws: Server, token):
                     voiceChannelId = dm.serverRepo.insertVoiceChannel(serverId, channelName)
                     
                     msg['data']['id'] = voiceChannelId
+                    msg['data']['activeMembers'] = []
 
                     serverMembers = dm.serverRepo.findMembers(serverId)
                     for member in serverMembers:
@@ -401,6 +423,7 @@ def ws_connect(ws: Server, token):
                 print('LEAVE MESSAGE SENT')
 
             if sessions.get(accountId):
+                #sessions[accountId]['ws'].close()
                 del sessions[accountId]
             print(f'{accountLogin} CLIENT CONNECTION CLOSED')
             print(f'SESSIONS: {sessions}')

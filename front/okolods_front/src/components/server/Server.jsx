@@ -60,7 +60,7 @@ export function Server(props) {
         props.ws.send(JSON.stringify(msg));
     }
 
-    console.log(props.renderedComponent);
+    console.log(props.serverData);
 
     return (
         <div id="server_container">
@@ -90,7 +90,7 @@ export function Server(props) {
                     <Button variant="dark" onClick={props.callbacks.conferenceButtonClick}>Conference</Button>
                     <Button variant="dark" onClick={props.callbacks.leaveChannelButtonClick}>Leave</Button>
                     <Button variant="dark">Micro Off</Button>
-                    <Button variant="dark">Video On</Button>
+                    <Button variant="dark" onClick={props.callbacks.videoOffOnButtonClick}>Video On</Button>
                 </div>
             </div>
             {props.renderedComponent == 5 && <Chat convType="server" chatId={props.chosenTextChannelId} ws={props.ws} messageList={props.textChannelMessageList} />}

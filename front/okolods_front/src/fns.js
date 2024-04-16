@@ -5,6 +5,7 @@ export function useRenderedRef(initial) {
     let [state, setState] = useState({value: initial});
 
     let obj = {
+        _initial: initial,
         _ref: ref,
         _state: state,
         _setState: setState,
@@ -15,6 +16,11 @@ export function useRenderedRef(initial) {
 
         set: function(value) {
             this._ref.current.value = value;
+            return this;
+        },
+
+        reset: function() {
+            this._ref.current.value = this._initial;
             return this;
         },
 

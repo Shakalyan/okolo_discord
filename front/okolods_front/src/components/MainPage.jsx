@@ -10,6 +10,7 @@ import { MsList } from "./main/MsList.jsx";
 import { Server } from './server/Server.jsx';
 import ContextMenu from './general/ContextMenu.jsx';
 import { useRenderedRef } from '../fns.js';
+import MemberList from './main/MemberList.jsx';
 
 export default function MainPage() {
 
@@ -92,6 +93,7 @@ export default function MainPage() {
         },
     
         voiceChannelTabClick: (event, id) => {
+            console.log(voiceChannelData.get().id, id);
             if (voiceChannelData.get().id == id) {
                 console.log("ALREADY IN THAT VOICE CHAT")
                 return;
@@ -118,6 +120,12 @@ export default function MainPage() {
 
         conferenceButtonClick: (event) => {
             renderedComponent.set(RenderedComponent.ServerConference).update();
+        },
+
+        videoOffOnButtonClick: (event) => {
+            let member = voiceChannelData.get().activeMembers.find((am) => am.id == accountData.get().id);
+            member.params.muteVideo = !member.params.muteVideo;
+            member.stream.getTracks()[1].enabled = !member.params.muteVideo;
         }
     };
 
@@ -208,10 +216,16 @@ export default function MainPage() {
                 if (msg.subtype == 'join' &&
                     isServerRendered() &&
                     serverData.get().id == msg.data.serverId) 
-                    {
+                {
                     let voiceChannel = serverData.get().voiceChannels.find((vc) => vc.id ==  msg.data.id);
                     if (accountData.get().id == msg.data.accountData.id) {
-                        msg.data.accountData.muteMic = true;
+                        voiceChannelData.set(voiceChannel);
+
+                        msg.data.accountData.params = {
+                            volume: 0,
+                            muteVideo: false
+                        };
+
                         if (!localStreamRef.current) {
                             setupDevices().then((stream) => {
                                 localStreamRef.current = stream;
@@ -226,8 +240,9 @@ export default function MainPage() {
                         msg.data.accountData.stream = localStreamRef.current;
                         voiceChannelData.get().id = msg.data.id;                  
                         wsapi_webrtcStartCall(socket, msg.data.id, accountData.get().id);
+                    } else {
+                        msg.data.accountData.params.volume = 1;
                     }
-                    msg.data.accountData.muteMic = false;
                     voiceChannel.activeMembers.push(msg.data.accountData);
                     serverData.update();
                 }
@@ -252,10 +267,10 @@ export default function MainPage() {
                         }
                         
                         if (msg.data.accountData.id == accountData.get().id) {
-                            voiceChannelData.get().id = null;
+                            voiceChannelData.reset();
                             peerConnections.current = [];
                         }
-                    }                        
+                    }
                 }
             }
             else if (msg.type == 'webrtc') {
@@ -380,6 +395,8 @@ export default function MainPage() {
                         chosenVoiceChannelId={voiceChannelData.get().id}
                         renderedComponent={renderedComponent.get()}
                     />}
+                
+                {<MemberList />}
             </div>
             <ContextMenu ref={contextMenu} actions={contextMenuActions}/>
         </div>

@@ -46,12 +46,10 @@ class Account:
     login: str
     password: str
     salt: str
+    isBot: bool
 
     def __init__(self, query_result):
-        self.id = query_result[0]
-        self.login = query_result[1]
-        self.password = query_result[2]
-        self.salt = query_result[3]
+        self.id, self.login, self.password, self.salt, self.isBot = query_result
 
 
 class Chat:
@@ -137,8 +135,8 @@ class AccountRepo:
     def getAll(self):
         return _eq_all(self.conn, 'SELECT * FROM account')
 
-    def insert(self, login, password, salt):
-        return _eq_none(self.conn, f"INSERT INTO account VALUES('{_generateUUID()}', '{login}', '{password}', '{salt}')")
+    def insert(self, login, password, salt, isBot=False):
+        return _eq_none(self.conn, f"INSERT INTO account VALUES('{_generateUUID()}', '{login}', '{password}', '{salt}', {isBot})")
 
     def findByLogin(self, login):
         res = _eq_one(self.conn, f"SELECT * FROM account WHERE login = '{login}'")
@@ -223,7 +221,7 @@ class ServerRepo():
         return id
     
     def findMembers(self, id):
-        members = _eq_all(self.conn, f"SELECT account.id, account.login, '', '' FROM account JOIN server_account_map ON account.id = server_account_map.account_id WHERE server_id = '{id}'")
+        members = _eq_all(self.conn, f"SELECT account.id, account.login, '', '', account.is_bot FROM account JOIN server_account_map ON account.id = server_account_map.account_id WHERE server_id = '{id}'")
         return list(map(lambda m: Account(m), members))
 
     def findById(self, id):
