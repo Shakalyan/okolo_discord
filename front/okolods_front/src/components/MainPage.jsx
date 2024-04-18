@@ -1,6 +1,7 @@
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import '../styles/MainPage.css'
+import '../styles/Settings.css'
 import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, api_getServerById, api_getTextChannelMessages, backendHost, wsapi_joinVoiceChat, wsapi_leaveVoiceChat, wsapi_webrtcAnswer, wsapi_webrtcCandidate, wsapi_webrtcOffer, wsapi_webrtcStartCall } from "../api.js";
 import NewChatForm from "./NewChatForm.jsx";
 import { NewServerForm } from './NewServerForm.jsx';
@@ -11,6 +12,9 @@ import { Server } from './server/Server.jsx';
 import ContextMenu from './general/ContextMenu.jsx';
 import { useRenderedRef } from '../fns.js';
 import MemberList from './main/MemberList.jsx';
+import { CiSettings } from "react-icons/ci";
+import AccountSettings from './AccountSettings.jsx';
+import Avatar from './general/Avatar.jsx';
 
 export default function MainPage() {
 
@@ -28,7 +32,8 @@ export default function MainPage() {
         NewServerForm: 3,
         Server: 4,
         ServerChat: 5,
-        ServerConference: 6
+        ServerConference: 6,
+        AccountSettings: 7
     };
     const renderedComponent = useRenderedRef(RenderedComponent.None);
 
@@ -356,22 +361,30 @@ export default function MainPage() {
     return (
         <div id="main_container">
             <div id="main_left_panel">
-                <Tabs
-                    defaultActiveKey="messages"
-                    className="mb-3 tab_text_color"
-                    fill
-                >
-                    <Tab eventKey="messages" title="Messages">
-                        <MsList list={chatList.get()}
-                                newTabClick={() => renderedComponent.set(RenderedComponent.NewChatForm).update()}
-                                tabClick={chatTabClick}/>
-                    </Tab>
-                    <Tab eventKey="servers" title="Servers">
-                        <MsList list={serverList.get()}
-                                newTabClick={() => renderedComponent.set(RenderedComponent.NewServerForm).update()}
-                                tabClick={serverTabClick}/>
-                    </Tab>
-                </Tabs>
+                <div style={{flexGrow: "1", backgroundColor: "transparent"}}>
+                    <Tabs
+                        defaultActiveKey="messages"
+                        className="mb-3 tab_text_color"
+                        fill
+                    >
+                        <Tab eventKey="messages" title="Messages">
+                            <MsList list={chatList.get()}
+                                    newTabClick={() => renderedComponent.set(RenderedComponent.NewChatForm).update()}
+                                    tabClick={chatTabClick}/>
+                        </Tab>
+                        <Tab eventKey="servers" title="Servers">
+                            <MsList list={serverList.get()}
+                                    newTabClick={() => renderedComponent.set(RenderedComponent.NewServerForm).update()}
+                                    tabClick={serverTabClick}/>
+                        </Tab>
+                    </Tabs>
+                </div>
+                <div id="main_left_panel_buttons_container">
+                    <Avatar width="40px" height="40px"/>
+                    <button className='icon-button' onClick={() => renderedComponent.set(RenderedComponent.AccountSettings).update()}>
+                        <CiSettings style={{fontSize: "30px", backgroundColor: "transparent"}}/>
+                    </button>
+                </div>
             </div>
             <div id="main_right_area">
                 {renderedComponent.get() == RenderedComponent.NewChatForm   && <NewChatForm ws={ws.current} 
@@ -396,7 +409,8 @@ export default function MainPage() {
                         renderedComponent={renderedComponent.get()}
                     />}
                 
-                {<MemberList />}
+                {(renderedComponent.get() == RenderedComponent.Chat || renderedComponent.get() == RenderedComponent.Server) && <MemberList />}
+                {renderedComponent.get() == RenderedComponent.AccountSettings && <AccountSettings />}
             </div>
             <ContextMenu ref={contextMenu} actions={contextMenuActions}/>
         </div>

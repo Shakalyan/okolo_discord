@@ -8,14 +8,9 @@
 #chat-message-container {
     flex: 1 1 100%;
     overflow-y: auto;
-    
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    /* flex-direction: column;
-    display: flex;
-    align-items: stretch;
-    justify-content: flex-end; */
 }
 
 #chat-control-container {

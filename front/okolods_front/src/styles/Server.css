@@ -5,7 +5,7 @@
 
 #server_control_panel {
     height: 100vh;
-    background-color: #202020;
+    background-color: var(--odbg-2);
     width: 300px;
     display: flex;
     flex-direction: column;
@@ -17,7 +17,7 @@
 
 #server_control_panel_buttons {
     height: 100px;
-    background-color: #202020;
+    background-color: var(--odbg-2);
 }
 
 .server_channel_container {
@@ -25,7 +25,7 @@
 }
 
 .server_channel_header_text {
-    background-color: #202020;
+    background-color: var(--odbg-2);
     font-style: oblique;
     margin: 0;
 }

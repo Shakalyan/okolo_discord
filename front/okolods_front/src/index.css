@@ -1,5 +1,12 @@
+:root {
+  --odbg-1: #242424;
+  --odbg-2: #202020;
+  /* --odbg-1: #202020;
+  --odbg-2: #242424; */
+}
+
 * {
-  background-color: #242424;
+  background-color: var(--odbg-1);
   color: white;
 }
 
@@ -14,11 +21,13 @@ body {
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  monospace;
 }
 
 .input_df {
   border-style: solid;
+  border-radius: 5px;
+  border-width: 1px;
   margin: 0px;
   padding: 0px;
   width: 100%;
@@ -52,3 +61,12 @@ code {
   color: green;
 }
 
+.icon-button {
+  background-color: var(--odbg-2);
+  border: 0;
+}
+
+.icon-button:hover {
+  background-color: var(--odbg-1);
+  outline: 1px solid white;
+}
