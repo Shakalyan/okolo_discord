@@ -52,19 +52,31 @@ export default function MainPage() {
     const chatData = useRenderedRef({});
 
 
+    async function fetchAvatars(members) {
+        let mmbs = [];
+        for (let i = 0; i < members.length; ++i) {
+            let m = members[i];
+            let response = await api_getAvatar(m.id);
+            if (response.status == 200) {
+                let blob = await response.blob();
+                mmbs.push({...m, avatar: blob});
+            }
+        }
+        return mmbs;
+    }
+
     function chatTabClick(event, id) {
         api_getAllMessagesByChatId(id).then((response) => {
             if (response.status == 200) {
-                response.json().then((json) => {
-                    console.log(json)
-                    renderedComponent.set(RenderedComponent.Chat).update();
+                response.json().then(async (json) => {
                     chatData
                     .set({
                         id: id,
                         messageList: json['messages'],
-                        members: json['members']
+                        members: await fetchAvatars(json['members'])
                     })
                     .update();
+                    renderedComponent.set(RenderedComponent.Chat).update();
                 })
             }
         })

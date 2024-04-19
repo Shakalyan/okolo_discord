@@ -329,6 +329,7 @@ def ws_connect(ws: Server, token):
                     chat = dm.chatRepo.findById(data['chatId'])
 
                     msg['data']['id'] = msgId
+                    msg['data']['accountId'] = accountId
                     msg['data']['login'] = accountLogin
                     msg['data']['datetime'] = str(msgDatetime)
                     for member in chat.members:
