@@ -11,7 +11,7 @@ export default function Chat(props) {
 
     useEffect(()=>{
         bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }, [props.chatData.messageList.length])
+    }, [props.messageList.length])
 
     function inputKeyDown(event) {
         if (event.keyCode === 13) {
@@ -20,7 +20,7 @@ export default function Chat(props) {
                 subtype: "newMessage",
                 data: {
                     text: inputRef.current.value,
-                    chatId: props.chatData.id,
+                    chatId: props.id,
                 }
             }
             props.ws.send(JSON.stringify(msg));
@@ -34,9 +34,8 @@ export default function Chat(props) {
                 <div style={{
                     minHeight: '0'
                 }}>
-                    {props.chatData.messageList.map((msg) => {
-                        console.log(msg);
-                        let avatar = props.chatData.members.find(mmb => mmb.id == msg.accountId)?.avatar;
+                    {props.messageList.map((msg) => {
+                        let avatar = props.members.find(mmb => mmb.id == msg.accountId)?.avatar;
                         return <MessageBox key={msg.id} msg={msg} avatar={avatar}/>
                     })}
                     <p ref={bottomRef}></p>

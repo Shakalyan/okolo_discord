@@ -93,7 +93,10 @@ export function Server(props) {
                     <Button variant="dark" onClick={props.callbacks.videoOffOnButtonClick}>Video On</Button>
                 </div>
             </div>
-            {props.renderedComponent == 5 && <Chat convType="server" chatId={props.chosenTextChannelId} ws={props.ws} messageList={props.textChannelMessageList} />}
+            {props.renderedComponent == 5 && <Chat convType="server" id={props.chosenTextChannelId}
+                                                                     ws={props.ws} 
+                                                                     messageList={props.textChannelMessageList}
+                                                                     members={props.serverData.members} />}
             {props.renderedComponent == 6 && <Conference voiceChannel={props.serverData.voiceChannels.find((vc) => vc.id == props.chosenVoiceChannelId)}/>}
         </div>
     );

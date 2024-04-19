@@ -225,7 +225,7 @@ class ServerRepo():
         return id
     
     def findMembers(self, id):
-        members = _eq_all(self.conn, f"SELECT account.id, account.login, '', '', account.is_bot, account.avatar FROM account JOIN server_account_map ON account.id = server_account_map.account_id WHERE server_id = '{id}'")
+        members = _eq_all(self.conn, f"SELECT account.id, account.login, '', '', account.is_bot, NULL FROM account JOIN server_account_map ON account.id = server_account_map.account_id WHERE server_id = '{id}'")
         return list(map(lambda m: Account(m), members))
 
     def findById(self, id):

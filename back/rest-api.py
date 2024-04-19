@@ -377,6 +377,7 @@ def ws_connect(ws: Server, token):
                     members = dm.serverRepo.findMembers(textChannel.serverId)
 
                     msg['data']['id'] = msgId
+                    msg['data']['accountId'] = accountId
                     msg['data']['login'] = accountLogin
                     msg['data']['datetime'] = str(msgDatetime)
                     print(msg)

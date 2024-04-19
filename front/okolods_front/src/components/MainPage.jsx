@@ -85,7 +85,8 @@ export default function MainPage() {
     function serverTabClick(event, id) {
         api_getServerById(id).then((response) => {
             if (response.status == 200) {
-                response.json().then((json) => {
+                response.json().then(async (json) => {
+                    json.members = await fetchAvatars(json.members);
                     serverData.set(json);
                     serverData.update();
                     renderedComponent.set(RenderedComponent.Server).update();
@@ -417,7 +418,9 @@ export default function MainPage() {
                 {renderedComponent.get() == RenderedComponent.NewChatForm   && <NewChatForm ws={ws.current} 
                                                                                       accountData={accountData.get()}/>}
 
-                {renderedComponent.get() == RenderedComponent.Chat          && <Chat chatData={chatData.get()} 
+                {renderedComponent.get() == RenderedComponent.Chat          && <Chat members={chatData.get().members}
+                                                                                     messageList={chatData.get().messageList}
+                                                                                     id={chatData.get().id}
                                                                                      ws={ws.current} 
                                                                                      convType="chat"/>}
 
@@ -437,6 +440,7 @@ export default function MainPage() {
                 
                 {/* {(renderedComponent.get() == RenderedComponent.Chat || renderedComponent.get() == RenderedComponent.Server) && <MemberList />} */}
                 {renderedComponent.get() == RenderedComponent.Chat && <MemberList members={chatData.get().members} />}
+                {(renderedComponent.get() == RenderedComponent.Server || renderedComponent.get() == RenderedComponent.ServerChat) && <MemberList members={serverData.get().members} />}
 
                 {renderedComponent.get() == RenderedComponent.AccountSettings && <AccountSettings curAvatar={accountData.get().avatar}/>}
             </div>
