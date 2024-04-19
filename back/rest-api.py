@@ -1,4 +1,4 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, send_file
 from flask_cors import CORS
 from datamanage import DataManager
 import bcrypt, base64
@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from flask_sock import Sock, Server, ConnectionClosed
 from psycopg2 import DatabaseError
 import json
+import io
 
 app = Flask(__name__)
 dm = DataManager()
@@ -223,6 +224,21 @@ def getTextChannelMessagesById():
         account = dm.accountRepo.findById(message.accountId)
         message.login = account.login
     return json.dumps(messages, default=lambda o: o.__dict__)
+
+
+@app.route("/account/avatar", methods=['GET', 'POST'])
+@db_except
+@auth_except
+def changeAccountAvatar():
+    auth = jwt_decode(getToken())
+    accountId = auth['accountId']
+    if request.method == 'GET':
+        print('GET METHOD')
+        avatar = dm.accountRepo.findById(accountId).avatar
+        return send_file(io.BytesIO(avatar), mimetype='image')
+    elif request.method == 'POST':
+        dm.accountRepo.changeAvatar(accountId, request.files['avatar'].read())
+        return Response(status=200)
 
 
 def wsSendMsg(id, msg):

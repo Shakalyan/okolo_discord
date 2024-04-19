@@ -12,11 +12,14 @@
     flex-direction: column;
 }
 
-#main_left_panel_buttons_container {
+#main_left_panel_control_container {
     background-color: transparent;
     height: 100px;
     width: 100%;
     border-top: 2px solid var(--odbg-1);
+    display: flex;
+    flex-direction: column;
+    padding: 3px;
 }
 
 .nav-link.active {

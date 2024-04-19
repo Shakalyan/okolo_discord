@@ -11,6 +11,13 @@ export function sendQuery(url, method) {
     });
 }
 
+export function sendFormQuery(url, method, data) {
+    return fetch(url, {
+        method: method,
+        body: data
+    });
+}
+
 export function sendJSONQuery(url, method, body) {
     return fetch(url, {
         method: method,
@@ -78,6 +85,20 @@ export function api_getTextChannelMessages(textChannelId) {
     let token = localStorage.getItem('token')
     let url = makeUrl(`/server/messages?textChannelId=${textChannelId}&token=${token}`)
     return sendQuery(url);
+}
+
+export function api_changeAvatar(file) {
+    let token = localStorage.getItem('token')
+    let formData = new FormData();
+    formData.append('avatar', file);
+    let url = makeUrl(`/account/avatar?token=${token}`);
+    return sendFormQuery(url, 'POST', formData);
+}
+
+export function api_getAvatar(accountId) {
+    let token = localStorage.getItem('token');
+    let url = makeUrl(`/account/avatar?accountId=${accountId}&token=${token}`);
+    return sendQuery(url, 'GET');
 }
 
 export function wsapi_createChat(ws, name, isGroup, members) {

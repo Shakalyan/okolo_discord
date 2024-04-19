@@ -47,9 +47,10 @@ class Account:
     password: str
     salt: str
     isBot: bool
+    avatar: bytearray
 
     def __init__(self, query_result):
-        self.id, self.login, self.password, self.salt, self.isBot = query_result
+        self.id, self.login, self.password, self.salt, self.isBot, self.avatar = query_result
 
 
 class Chat:
@@ -135,8 +136,8 @@ class AccountRepo:
     def getAll(self):
         return _eq_all(self.conn, 'SELECT * FROM account')
 
-    def insert(self, login, password, salt, isBot=False):
-        return _eq_none(self.conn, f"INSERT INTO account VALUES('{_generateUUID()}', '{login}', '{password}', '{salt}', {isBot})")
+    def insert(self, login, password, salt, isBot=False, avatar=None):
+        return _eq_none(self.conn, f"INSERT INTO account VALUES('{_generateUUID()}', '{login}', '{password}', '{salt}', {isBot}, {psycopg2.Binary(avatar)})")
 
     def findByLogin(self, login):
         res = _eq_one(self.conn, f"SELECT * FROM account WHERE login = '{login}'")
@@ -149,6 +150,9 @@ class AccountRepo:
         if res == None:
             return res
         return Account(res)
+    
+    def changeAvatar(self, id, file):
+        _eq_none(self.conn, f"UPDATE account SET avatar = {psycopg2.Binary(file)} WHERE id = '{id}'")
 
 
 class ChatRepo:
@@ -221,7 +225,7 @@ class ServerRepo():
         return id
     
     def findMembers(self, id):
-        members = _eq_all(self.conn, f"SELECT account.id, account.login, '', '', account.is_bot FROM account JOIN server_account_map ON account.id = server_account_map.account_id WHERE server_id = '{id}'")
+        members = _eq_all(self.conn, f"SELECT account.id, account.login, '', '', account.is_bot, account.avatar FROM account JOIN server_account_map ON account.id = server_account_map.account_id WHERE server_id = '{id}'")
         return list(map(lambda m: Account(m), members))
 
     def findById(self, id):

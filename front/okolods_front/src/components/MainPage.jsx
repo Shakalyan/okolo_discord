@@ -2,7 +2,7 @@ import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import '../styles/MainPage.css'
 import '../styles/Settings.css'
-import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, api_getServerById, api_getTextChannelMessages, backendHost, wsapi_joinVoiceChat, wsapi_leaveVoiceChat, wsapi_webrtcAnswer, wsapi_webrtcCandidate, wsapi_webrtcOffer, wsapi_webrtcStartCall } from "../api.js";
+import { api_accountEcho, api_getAccountChats, api_getAccountServers, api_getAllMessagesByChatId, api_getAvatar, api_getServerById, api_getTextChannelMessages, backendHost, wsapi_joinVoiceChat, wsapi_leaveVoiceChat, wsapi_webrtcAnswer, wsapi_webrtcCandidate, wsapi_webrtcOffer, wsapi_webrtcStartCall } from "../api.js";
 import NewChatForm from "./NewChatForm.jsx";
 import { NewServerForm } from './NewServerForm.jsx';
 import { useEffect, useState, useRef } from "react";
@@ -323,6 +323,7 @@ export default function MainPage() {
         api_getAccountChats().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
+                    console.log(json);
                     chatList.set(json);
                     chatList.update();
                 });
@@ -336,6 +337,14 @@ export default function MainPage() {
                     serverList.update();
                 })
             }
+        });
+
+        api_getAvatar(accountData.get().id).then((response) => {
+            response.blob().then((blob) => {
+                console.log(blob);
+                accountData.get().avatar = blob;
+                accountData.update();
+            })
         })
     }
 
@@ -379,11 +388,16 @@ export default function MainPage() {
                         </Tab>
                     </Tabs>
                 </div>
-                <div id="main_left_panel_buttons_container">
-                    <Avatar width="40px" height="40px"/>
-                    <button className='icon-button' onClick={() => renderedComponent.set(RenderedComponent.AccountSettings).update()}>
-                        <CiSettings style={{fontSize: "30px", backgroundColor: "transparent"}}/>
-                    </button>
+                <div id="main_left_panel_control_container">
+                    <div style={{backgroundColor: "transparent", flexGrow: "1"}}>
+                        <Avatar width="40px" height="40px" file={accountData.get().avatar}/>
+                        <span style={{marginLeft: "5px"}}>{accountData.get().login}</span>
+                    </div>
+                    <div style={{backgroundColor: "transparent", flexGrow: "1"}}>
+                        <button className='icon-button' onClick={() => renderedComponent.set(RenderedComponent.AccountSettings).update()}>
+                            <CiSettings style={{fontSize: "30px", backgroundColor: "transparent"}}/>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div id="main_right_area">
@@ -410,7 +424,7 @@ export default function MainPage() {
                     />}
                 
                 {(renderedComponent.get() == RenderedComponent.Chat || renderedComponent.get() == RenderedComponent.Server) && <MemberList />}
-                {renderedComponent.get() == RenderedComponent.AccountSettings && <AccountSettings />}
+                {renderedComponent.get() == RenderedComponent.AccountSettings && <AccountSettings curAvatar={accountData.get().avatar}/>}
             </div>
             <ContextMenu ref={contextMenu} actions={contextMenuActions}/>
         </div>
