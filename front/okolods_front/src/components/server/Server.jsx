@@ -14,20 +14,17 @@ export function Server(props) {
     const newVoiceChannelInput = useRef();
     const newTextChannelInput = useRef();
 
-    const voiceChannelcmActions = [
+    const controlPanelcmActions = [
         {
-            text: "New",
+            text: "New voice channel",
             handler: () => {
                 console.log('new voice channel');
                 newVoiceChannelInput.current.hidden = false;
                 newVoiceChannelInput.current.focus();
             }
-        }
-    ];
-
-    const textChannelcmActions = [
+        },
         {
-            text: "New",
+            text: "New text channel",
             handler: () => {
                 console.log('new text channel');
                 newTextChannelInput.current.hidden = false;
@@ -65,9 +62,8 @@ export function Server(props) {
     return (
         <div id="server_container">
             <div id="server_control_panel">
-                <div id="server_control_panel_channels">
-                    <p onContextMenu={(e) => props.callContextMenu(e, voiceChannelcmActions)} className="server_channel_header_text">Voice channels</p>
-                    <Stack style={{marginLeft: "30px"}}>
+                <div id="server_control_panel_channels" onContextMenu={(e) => props.callContextMenu(e, controlPanelcmActions)}>
+                    <Stack>
                         <PopupInput ref={newVoiceChannelInput} 
                                     onEnter={newVoiceChannel}
                                     placeholder="Enter name"/>
@@ -76,8 +72,8 @@ export function Server(props) {
                                                                                 activeMembers={vc.activeMembers}
                                                                                 onClick={(e) => props.callbacks.voiceChannelTabClick(e, vc.id)}/>)}
                     </Stack>
-                    <p onContextMenu={(e) => props.callContextMenu(e, textChannelcmActions)} className="server_channel_header_text">Text channels</p>
-                    <Stack style={{marginLeft: "30px"}}>
+                    <br />
+                    <Stack>
                         <PopupInput ref={newTextChannelInput} 
                                     onEnter={newTextChannel}
                                     placeholder="Enter name"/>

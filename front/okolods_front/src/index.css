@@ -65,6 +65,7 @@ code {
 .icon-button {
   background-color: var(--odbg-2);
   border: 0;
+  margin: 3px;
 }
 
 .icon-button:hover {
@@ -90,4 +91,8 @@ code {
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+.clickable {
+  cursor: pointer;
 }

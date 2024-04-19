@@ -14,6 +14,8 @@
 
 #server_control_panel_channels {
     flex-grow: 1;
+    background-color: var(--odbg-2);
+    border-left: 2px solid var(--odbg-1);
 }
 
 #server_control_panel_buttons {
@@ -22,7 +24,8 @@
 }
 
 .server_channel_container {
-    margin: 0;
+    padding: 5px;
+    background-color: var(--odbg-2);
 }
 
 .server_channel_header_text {

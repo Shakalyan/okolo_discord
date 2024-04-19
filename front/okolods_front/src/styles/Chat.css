@@ -19,6 +19,7 @@
     justify-content: flex-end;
     background-color: var(--odbg-2);
     border-left: 2px solid var(--odbg-1);
+    border-top: 2px solid var(--odbg-1);
 }
 
 .message-box {

@@ -13,8 +13,11 @@ import ContextMenu from './general/ContextMenu.jsx';
 import { useRenderedRef } from '../fns.js';
 import MemberList from './main/MemberList.jsx';
 import { CiSettings } from "react-icons/ci";
+import { IoLogOutOutline } from "react-icons/io5";
 import AccountSettings from './AccountSettings.jsx';
 import Avatar from './general/Avatar.jsx';
+import IconButton from './general/IconButton.jsx';
+import { useNavigate } from 'react-router-dom';
 
 export default function MainPage() {
 
@@ -24,6 +27,7 @@ export default function MainPage() {
     const accountData = useRenderedRef({});
     const contextMenu = useRef();
     const [contextMenuActions, setContextMenuActions] = useState([]);
+    const navigate = useNavigate();
 
     const RenderedComponent = {
         None: 0,
@@ -86,7 +90,13 @@ export default function MainPage() {
         api_getServerById(id).then((response) => {
             if (response.status == 200) {
                 response.json().then(async (json) => {
+                    console.log(json);
                     json.members = await fetchAvatars(json.members);
+                    json.voiceChannels.forEach(vc => {
+                        vc.activeMembers.forEach(am => {
+                            am.avatar = json.members.find(m => m.id == am.id).avatar;
+                        });
+                    });
                     serverData.set(json);
                     serverData.update();
                     renderedComponent.set(RenderedComponent.Server).update();
@@ -250,6 +260,7 @@ export default function MainPage() {
                             setupDevices().then((stream) => {
                                 localStreamRef.current = stream;
                                 msg.data.accountData.stream = localStreamRef.current;
+                                msg.data.accountData.avatar = serverData.get().members.find(m => m.id == msg.data.accountData.id).avatar;
                                 voiceChannel.activeMembers.push(msg.data.accountData);
                                 serverData.update();
                                 voiceChannelData.get().id = msg.data.id;
@@ -258,6 +269,7 @@ export default function MainPage() {
                             return;
                         }
                         msg.data.accountData.stream = localStreamRef.current;
+                        msg.data.accountData.avatar = serverData.get().members.find(m => m.id == msg.data.accountData.id).avatar;
                         voiceChannelData.get().id = msg.data.id;                  
                         wsapi_webrtcStartCall(socket, msg.data.id, accountData.get().id);
                     } else {
@@ -377,7 +389,8 @@ export default function MainPage() {
     }
 
     document.onclick = (event) => {
-        contextMenu.current.hidden = true;
+        if (contextMenu.current)
+            contextMenu.current.hidden = true;
     }
 
 
@@ -411,6 +424,7 @@ export default function MainPage() {
                         <button className='icon-button' onClick={() => renderedComponent.set(RenderedComponent.AccountSettings).update()}>
                             <CiSettings style={{fontSize: "30px", backgroundColor: "transparent"}}/>
                         </button>
+                        <IconButton icon={<IoLogOutOutline />} size="30px" onClick={() => {ws.current.close(); navigate('/signin');}} />
                     </div>
                 </div>
             </div>
@@ -438,7 +452,6 @@ export default function MainPage() {
                         renderedComponent={renderedComponent.get()}
                     />}
                 
-                {/* {(renderedComponent.get() == RenderedComponent.Chat || renderedComponent.get() == RenderedComponent.Server) && <MemberList />} */}
                 {renderedComponent.get() == RenderedComponent.Chat && <MemberList members={chatData.get().members} />}
                 {(renderedComponent.get() == RenderedComponent.Server || renderedComponent.get() == RenderedComponent.ServerChat) && <MemberList members={serverData.get().members} />}
 
