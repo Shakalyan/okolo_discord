@@ -25,6 +25,7 @@ code {
 }
 
 .input_df {
+  background-color: transparent;
   border-style: solid;
   border-radius: 5px;
   border-width: 1px;
@@ -69,4 +70,24 @@ code {
 .icon-button:hover {
   background-color: var(--odbg-1);
   outline: 1px solid white;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #3b3b3b;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }

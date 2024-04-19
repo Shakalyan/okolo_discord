@@ -179,14 +179,19 @@ def accountEcho():
 @auth_except
 def getAllMessagesByChatId():
     jwt_decode(getToken())
-
     chatId = request.args.get('chatId')
+
     messages = dm.messageRepo.getAllByChatId(chatId)
     for message in messages:
         account = dm.accountRepo.findById(message.accountId)
         message.login = account.login
 
-    return json.dumps(messages, default=lambda o: o.__dict__)
+    response = {
+        'messages': messages,
+        'members': dm.chatRepo.findById(chatId).members
+    }
+
+    return json.dumps(response, default=lambda o: o.__dict__)
 
 
 @app.route("/servers")
@@ -229,14 +234,14 @@ def getTextChannelMessagesById():
 @app.route("/account/avatar", methods=['GET', 'POST'])
 @db_except
 @auth_except
-def changeAccountAvatar():
+def accountAvatar():
     auth = jwt_decode(getToken())
-    accountId = auth['accountId']
     if request.method == 'GET':
-        print('GET METHOD')
+        accountId = request.args.get('accountId')
         avatar = dm.accountRepo.findById(accountId).avatar
         return send_file(io.BytesIO(avatar), mimetype='image')
     elif request.method == 'POST':
+        accountId = auth['accountId']
         dm.accountRepo.changeAvatar(accountId, request.files['avatar'].read())
         return Response(status=200)
 

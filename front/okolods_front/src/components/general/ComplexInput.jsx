@@ -2,7 +2,7 @@ import React from 'react'
 
 let ComplexInput = React.forwardRef((props, ref) => {
         return (
-            <div className="input_div">
+            <div className="input_div" style={{backgroundColor: "transparent"}}>
                 <p className="input_incs_df">{props.text}</p>
                 <input  type={props.type} 
                         className="input_df" 

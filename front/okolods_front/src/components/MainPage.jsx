@@ -56,11 +56,13 @@ export default function MainPage() {
         api_getAllMessagesByChatId(id).then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
+                    console.log(json)
                     renderedComponent.set(RenderedComponent.Chat).update();
                     chatData
                     .set({
                         id: id,
-                        messageList: json
+                        messageList: json['messages'],
+                        members: json['members']
                     })
                     .update();
                 })
@@ -315,7 +317,14 @@ export default function MainPage() {
         api_accountEcho().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
-                    accountData.set(json);
+                    console.log(json);
+                    accountData.set(json).update();
+                    api_getAvatar(accountData.get().id).then((response) => {
+                        response.blob().then((blob) => {
+                            accountData.get().avatar = blob;
+                            accountData.update();
+                        })
+                    })
                 })
             }
         });
@@ -337,15 +346,7 @@ export default function MainPage() {
                     serverList.update();
                 })
             }
-        });
-
-        api_getAvatar(accountData.get().id).then((response) => {
-            response.blob().then((blob) => {
-                console.log(blob);
-                accountData.get().avatar = blob;
-                accountData.update();
-            })
-        })
+        });        
     }
 
     useEffect(() => {
@@ -404,10 +405,9 @@ export default function MainPage() {
                 {renderedComponent.get() == RenderedComponent.NewChatForm   && <NewChatForm ws={ws.current} 
                                                                                       accountData={accountData.get()}/>}
 
-                {renderedComponent.get() == RenderedComponent.Chat          && <Chat    chatId={chatData.get().id} 
-                                                                                  ws={ws.current} 
-                                                                                  messageList={chatData.get().messageList}
-                                                                                  convType="chat"/>}
+                {renderedComponent.get() == RenderedComponent.Chat          && <Chat chatData={chatData.get()} 
+                                                                                     ws={ws.current} 
+                                                                                     convType="chat"/>}
 
                 {renderedComponent.get() == RenderedComponent.NewServerForm && <NewServerForm ws={ws.current} 
                                                                                         accountData={accountData.get()}/>}
@@ -423,7 +423,9 @@ export default function MainPage() {
                         renderedComponent={renderedComponent.get()}
                     />}
                 
-                {(renderedComponent.get() == RenderedComponent.Chat || renderedComponent.get() == RenderedComponent.Server) && <MemberList />}
+                {/* {(renderedComponent.get() == RenderedComponent.Chat || renderedComponent.get() == RenderedComponent.Server) && <MemberList />} */}
+                {renderedComponent.get() == RenderedComponent.Chat && <MemberList members={chatData.get().members} />}
+
                 {renderedComponent.get() == RenderedComponent.AccountSettings && <AccountSettings curAvatar={accountData.get().avatar}/>}
             </div>
             <ContextMenu ref={contextMenu} actions={contextMenuActions}/>

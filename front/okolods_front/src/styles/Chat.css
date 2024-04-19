@@ -14,9 +14,11 @@
 }
 
 #chat-control-container {
-    height: 100px;
+    min-height: 100px;
     display: flex;
     justify-content: flex-end;
+    background-color: var(--odbg-2);
+    border-left: 2px solid var(--odbg-1);
 }
 
 .message-box {
@@ -32,6 +34,7 @@
 }
 
 #chat-control-input-container {
+    background-color: transparent;
     flex-grow: 1;
     padding: 5px;
     margin: auto 0;
@@ -40,4 +43,7 @@
 #chat-control-options-container {
     width: 400px;
     height: 100%;
+    background-color: var(--odbg-2);
+    border-left: 2px solid var(--odbg-1);
+    border-right: 2px solid var(--odbg-1)
 }

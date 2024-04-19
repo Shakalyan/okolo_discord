@@ -14,6 +14,10 @@ export function useRenderedRef(initial) {
             return this._ref.current.value;
         },
 
+        getState: function() {
+            return this._state;
+        },
+
         set: function(value) {
             this._ref.current.value = value;
             return this;
@@ -25,7 +29,7 @@ export function useRenderedRef(initial) {
         },
 
         update: function() {
-            this._setState({...this._ref.current.value})
+            this._setState({value: this._ref.current.value})
         }
     }
     
