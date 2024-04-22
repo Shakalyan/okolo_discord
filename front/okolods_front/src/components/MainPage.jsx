@@ -421,9 +421,7 @@ export default function MainPage() {
                         <span style={{marginLeft: "5px"}}>{accountData.get().login}</span>
                     </div>
                     <div style={{backgroundColor: "transparent", flexGrow: "1"}}>
-                        <button className='icon-button' onClick={() => renderedComponent.set(RenderedComponent.AccountSettings).update()}>
-                            <CiSettings style={{fontSize: "30px", backgroundColor: "transparent"}}/>
-                        </button>
+                        <IconButton icon={<CiSettings />} size="30px" onClick={() => renderedComponent.set(RenderedComponent.AccountSettings).update()} />
                         <IconButton icon={<IoLogOutOutline />} size="30px" onClick={() => {ws.current.close(); navigate('/signin');}} />
                     </div>
                 </div>

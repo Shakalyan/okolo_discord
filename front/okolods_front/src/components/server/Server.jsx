@@ -8,6 +8,13 @@ import { useEffect, useRef } from "react";
 import { api_getTextChannelMessages } from "../../api";
 import Button from "react-bootstrap/Button"
 import { Conference } from "./Conference";
+import { PiMonitorBold } from "react-icons/pi";
+import { CiMicrophoneOn } from "react-icons/ci";
+import { CiMicrophoneOff } from "react-icons/ci";
+import { PiWebcamFill } from "react-icons/pi";
+import { PiWebcamSlashFill } from "react-icons/pi";
+import { RxCross2 } from "react-icons/rx";
+import IconButton from "../general/IconButton";
 
 export function Server(props) {
 
@@ -83,10 +90,10 @@ export function Server(props) {
                     </Stack>
                 </div>
                 <div id="server_control_panel_buttons">
-                    <Button variant="dark" onClick={props.callbacks.conferenceButtonClick}>Conference</Button>
-                    <Button variant="dark" onClick={props.callbacks.leaveChannelButtonClick}>Leave</Button>
-                    <Button variant="dark">Micro Off</Button>
-                    <Button variant="dark" onClick={props.callbacks.videoOffOnButtonClick}>Video On</Button>
+                    <IconButton icon={<PiMonitorBold />} size="30px" onClick={props.callbacks.conferenceButtonClick} />
+                    <IconButton icon={<CiMicrophoneOn />} size="30px" onClick={props.callbacks.conferenceButtonClick} />
+                    <IconButton icon={<PiWebcamFill />} size="30px" onClick={props.callbacks.videoOffOnButtonClick} />
+                    <IconButton icon={<RxCross2 />} size="30px" onClick={props.callbacks.leaveChannelButtonClick} />
                 </div>
             </div>
             {props.renderedComponent == 5 && <Chat convType="server" id={props.chosenTextChannelId}

@@ -66,11 +66,12 @@ code {
   background-color: var(--odbg-2);
   border: 0;
   margin: 3px;
+  border: 1px solid transparent;
 }
 
 .icon-button:hover {
   background-color: var(--odbg-1);
-  outline: 1px solid white;
+  border: 1px solid white;
 }
 
 /* width */
