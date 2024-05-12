@@ -31,7 +31,6 @@ export default function Signin() {
         let login = loginInput.current.value;
         let password = passwordInput.current.value;
         api_signin(login, password).then((response) => {
-            console.log(response.status);
             if (response.status == 200) {
                 response.text().then((token) => {
                     localStorage.setItem('token', token);

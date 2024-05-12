@@ -30,8 +30,6 @@ export default function NewChatForm(props) {
         if (event.keyCode === 13) {
             let login = memberInput.current.value;
             
-            console.log(checkBox.current.disabled);
-
             if (login == props.accountData.login) {
                 setMemberDsc('You cannot add yourself');
                 return;

@@ -18,7 +18,6 @@ export default function AccountSettings(props) {
     function onSaveClick(event) {
         api_changeAvatar(avatar.get()).then((response) => {
             if (response.status == 200) {
-                console.log("ok");
             }
         })
     }

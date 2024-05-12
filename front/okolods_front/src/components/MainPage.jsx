@@ -90,7 +90,6 @@ export default function MainPage() {
         api_getServerById(id).then((response) => {
             if (response.status == 200) {
                 response.json().then(async (json) => {
-                    console.log(json);
                     json.members = await fetchAvatars(json.members);
                     json.voiceChannels.forEach(vc => {
                         vc.activeMembers.forEach(am => {
@@ -123,7 +122,6 @@ export default function MainPage() {
         },
     
         voiceChannelTabClick: (event, id) => {
-            console.log(voiceChannelData.get().id, id);
             if (voiceChannelData.get().id == id) {
                 console.log("ALREADY IN THAT VOICE CHAT")
                 return;
@@ -161,7 +159,6 @@ export default function MainPage() {
 
     
     function setupDevices() {
-        console.log('setupDevice invoked');
         return navigator.mediaDevices.getUserMedia({ audio: true, video: true });
     }
 
@@ -273,7 +270,10 @@ export default function MainPage() {
                         voiceChannelData.get().id = msg.data.id;                  
                         wsapi_webrtcStartCall(socket, msg.data.id, accountData.get().id);
                     } else {
-                        msg.data.accountData.params.volume = 1;
+                        msg.data.accountData.params = {
+                            volume: 1,
+                            muteVideo: false
+                        };
                     }
                     voiceChannel.activeMembers.push(msg.data.accountData);
                     serverData.update();
@@ -303,11 +303,11 @@ export default function MainPage() {
                             peerConnections.current = [];
                         }
                     }
+                    console.log(peerConnections.current);
                 }
             }
             else if (msg.type == 'webrtc') {
                 if (msg.subtype == 'startCall') {
-                    console.log('StartCall');
                     let peerConnection = createPeerConnection(socket, msg.data.roomId, msg.data.senderId);
                     peerConnection.createOffer().then(dsc => {
                         peerConnection.setLocalDescription(dsc);
@@ -317,7 +317,6 @@ export default function MainPage() {
                 else if (msg.subtype == 'offer') {
                     if (msg.data.receiverId != accountData.get().id)
                         return
-                    console.log('offer');
                     let peerConnection = createPeerConnection(socket, msg.data.roomId, msg.data.senderId);
                     peerConnection.setRemoteDescription(msg.data.dsc).then(async () => {
                         let dsc = await peerConnection.createAnswer();
@@ -342,7 +341,6 @@ export default function MainPage() {
         api_accountEcho().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
-                    console.log(json);
                     accountData.set(json).update();
                     api_getAvatar(accountData.get().id).then((response) => {
                         response.blob().then((blob) => {
@@ -357,7 +355,6 @@ export default function MainPage() {
         api_getAccountChats().then((response) => {
             if (response.status == 200) {
                 response.json().then((json) => {
-                    console.log(json);
                     chatList.set(json);
                     chatList.update();
                 });

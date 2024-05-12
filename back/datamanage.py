@@ -137,7 +137,9 @@ class AccountRepo:
         return _eq_all(self.conn, 'SELECT * FROM account')
 
     def insert(self, login, password, salt, isBot=False, avatar=None):
-        return _eq_none(self.conn, f"INSERT INTO account VALUES('{_generateUUID()}', '{login}', '{password}', '{salt}', {isBot}, {psycopg2.Binary(avatar)})")
+        id = _generateUUID()
+        _eq_none(self.conn, f"INSERT INTO account VALUES('{id}', '{login}', '{password}', '{salt}', {isBot}, {psycopg2.Binary(avatar)})")
+        return id
 
     def findByLogin(self, login):
         res = _eq_one(self.conn, f"SELECT * FROM account WHERE login = '{login}'")

@@ -8,11 +8,15 @@ export function ConferenceTab(props) {
         if (!props.memberData.stream)
             return;
         videoRef.current.srcObject = props.memberData.stream;
-        videoRef.current.volume = props.memberData.params.volume;
     }, [props.memberData.stream])
-   
+    
+    useEffect(() => {
+        if (!props.memberData.params)
+            return;
+        videoRef.current.volume = props.memberData.params.volume;
+        console.log(`VOLUME FOR ${props.memberData.login}: ${props.memberData.params.volume}`)
+    }, [props.memberData.params])
 
-    console.log(props.memberData);
     return (
         <div className="conference-tab">
             <video

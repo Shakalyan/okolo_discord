@@ -46,6 +46,14 @@ def jwt_create(account_id, login):
 
 def jwt_decode(token):
     return jwt.decode(token, pub_key, ['RS256'])
+
+
+def jwt_bot_create(botId, botName):
+    payload = {
+        'accountId': botId,
+        'login': botName
+    }
+    return jwt.encode(payload, prv_key, 'RS256')
     
 
 def db_except(func):
@@ -69,8 +77,10 @@ def auth_except(func):
     wrapper_func.__name__ = func.__name__
     return wrapper_func
 
+
 def getToken():
     return request.args.get('token')
+
 
 @app.route('/ping')
 def ping():
@@ -83,26 +93,34 @@ def signup():
     data = request.json
     login = data['login']
     password = data['password']
+    isBot = data.get('isBot')
 
     if len(login) < 3:
         return Response("SHORT_LOGIN", status=400)
-    
-    if len(password) < 5:
-        return Response("SHORT_PASSWORD", status=400)
     
     result = dm.accountRepo.findByLogin(login)
     if result != None:
         return Response("LOGIN_IS_USED", status=400)
 
-    salt = bcrypt.gensalt()
-    hashed_pw = bcrypt.hashpw(password.encode('utf-8'), salt)
+    if not isBot:
+        if len(password) < 5:
+            return Response("SHORT_PASSWORD", status=400)
 
-    enc_salt = base64.b64encode(salt).decode('utf-8')
-    enc_hashed_pw = base64.b64encode(hashed_pw).decode('utf-8')
+        salt = bcrypt.gensalt()
+        hashed_pw = bcrypt.hashpw(password.encode('utf-8'), salt)
 
-    dm.accountRepo.insert(login, enc_hashed_pw, enc_salt)
+        enc_salt = base64.b64encode(salt).decode('utf-8')
+        enc_hashed_pw = base64.b64encode(hashed_pw).decode('utf-8')
+
+        dm.accountRepo.insert(login, enc_hashed_pw, enc_salt)
+        
+        return Response(status=200)
     
-    return Response(status=200)
+    else:
+        botId = dm.accountRepo.insert(login, password, '', True)
+        token = jwt_bot_create(botId, login)
+        return Response(token, status=200)
+
 
 
 @app.route('/signin', methods=['POST'])

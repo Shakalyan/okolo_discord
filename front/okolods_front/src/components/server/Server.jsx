@@ -25,7 +25,6 @@ export function Server(props) {
         {
             text: "New voice channel",
             handler: () => {
-                console.log('new voice channel');
                 newVoiceChannelInput.current.hidden = false;
                 newVoiceChannelInput.current.focus();
             }
@@ -33,7 +32,6 @@ export function Server(props) {
         {
             text: "New text channel",
             handler: () => {
-                console.log('new text channel');
                 newTextChannelInput.current.hidden = false;
                 newTextChannelInput.current.focus();
             }
@@ -63,8 +61,6 @@ export function Server(props) {
         };
         props.ws.send(JSON.stringify(msg));
     }
-
-    console.log(props.serverData);
 
     return (
         <div id="server_container">

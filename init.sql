@@ -21,6 +21,7 @@ DROP TABLE IF EXISTS chat_account_map;
 CREATE TABLE chat_account_map (
     chat_id UUID NOT NULL,
     account_id UUID NOT NULL,
+    PRIMARY KEY (chat_id, account_id),
     FOREIGN KEY (chat_id) REFERENCES chat(id),
     FOREIGN KEY (account_id) REFERENCES account(id)
 );
@@ -45,6 +46,7 @@ DROP TABLE IF EXISTS server_account_map;
 CREATE TABLE server_account_map (
     server_id UUID NOT NULL,
     account_id UUID NOT NULL,
+    PRIMARY KEY (server_id, account_id),
     FOREIGN KEY (server_id) REFERENCES server(id),
     FOREIGN KEY (account_id) REFERENCES account(id)
 );
