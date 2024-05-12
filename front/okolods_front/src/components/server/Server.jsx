@@ -23,14 +23,14 @@ export function Server(props) {
 
     const controlPanelcmActions = [
         {
-            text: "New voice channel",
+            text: "Добавить голосовой канал",
             handler: () => {
                 newVoiceChannelInput.current.hidden = false;
                 newVoiceChannelInput.current.focus();
             }
         },
         {
-            text: "New text channel",
+            text: "Добавить текстовый канал",
             handler: () => {
                 newTextChannelInput.current.hidden = false;
                 newTextChannelInput.current.focus();

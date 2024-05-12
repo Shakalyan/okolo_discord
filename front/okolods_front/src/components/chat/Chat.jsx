@@ -43,7 +43,7 @@ export default function Chat(props) {
             </div>
             <div id="chat-control-container">
                 <div id="chat-control-input-container">
-                    <ComplexInput placeholder="Enter message" onKeyDown={inputKeyDown} ref={inputRef}/>
+                    <ComplexInput placeholder="Введите сообщение" onKeyDown={inputKeyDown} ref={inputRef}/>
                 </div>
                 <div id="chat-control-options-container">
                 </div>

@@ -78,24 +78,24 @@ export default function NewChatForm(props) {
     }
 
     return (
-        <div id="new_chat_form">
+        <div id="new_chat_form" style={{margin: "30px"}}>
             <Stack gap={3}>
-                <h1>New chat</h1>
+                <h1>Новый чат</h1>
                 <Form>
                 <Form.Check
                     type="switch"
                     id="custom-switch"
-                    label="Group"
+                    label="Группа"
                     ref={checkBox}
                     onChange={checkBoxChange}
                 />
                 </Form>
-                <ComplexInput text="Name" ref={nameInput} disabled={true} dsc={nameDsc}/>
-                <ComplexInput text="Member" ref={memberInput} onKeyDown={memberInputKeyDown} dsc={memberDsc}/>
+                <ComplexInput text="Название" ref={nameInput} disabled={true} dsc={nameDsc}/>
+                <ComplexInput text="Участник" ref={memberInput} onKeyDown={memberInputKeyDown} dsc={memberDsc}/>
                 <ListGroup style={{ maxHeight: '200px', overflowY: 'auto' }}>
                     {memberLoginsList.map((member) => <ListGroup.Item key={member}>{member}</ListGroup.Item>)}
                 </ListGroup>
-                <Button variant="light" onClick={createChatClick}>Create</Button>
+                <Button variant="light" onClick={createChatClick}>Создать</Button>
             </Stack>
         </div>
     );

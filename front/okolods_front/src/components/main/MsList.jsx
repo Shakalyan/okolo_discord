@@ -5,7 +5,7 @@ import MsTab from "./MsTab";
 export function MsList(props) {
     return (
         <Stack>
-            <Button variant='dark' size='sm' onClick={props.newTabClick}>New</Button>
+            <Button variant='dark' size='sm' onClick={props.newTabClick}>Добавить</Button>
             {props.list.map((el) => <MsTab key={el.id} text={el.name} onClick={(event)=>props.tabClick(event, el.id)}/>)}
         </Stack>
     );

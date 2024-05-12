@@ -1,4 +1,4 @@
-export const backendHost = "192.168.1.113:5000";
+export const backendHost = "192.168.1.66:5000";
 
 export function makeUrl(endpoint) {
     let url = `http://${backendHost}${endpoint}`;

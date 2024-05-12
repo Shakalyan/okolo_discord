@@ -64,15 +64,15 @@ export function NewServerForm(props) {
     }
 
     return (
-        <div id="new_server_form">
+        <div id="new_server_form" style={{margin: "30px"}}>
             <Stack gap={3}>
-                <h1>New server</h1>
-                <ComplexInput text="Name" ref={nameInput} dsc={nameDsc}/>
-                <ComplexInput text="Member" ref={memberInput} onKeyDown={memberInputKeyDown} dsc={memberDsc}/>
+                <h1>Создать сервер</h1>
+                <ComplexInput text="Название" ref={nameInput} dsc={nameDsc}/>
+                <ComplexInput text="Участник" ref={memberInput} onKeyDown={memberInputKeyDown} dsc={memberDsc}/>
                 <ListGroup style={{ maxHeight: '200px', overflowY: 'auto' }}>
                     {memberLoginsList.map((member) => <ListGroup.Item key={member}>{member}</ListGroup.Item>)}
                 </ListGroup>
-                <Button variant="light" onClick={createServerClick}>Create</Button>
+                <Button variant="light" onClick={createServerClick}>Создать</Button>
             </Stack>
         </div>
     );

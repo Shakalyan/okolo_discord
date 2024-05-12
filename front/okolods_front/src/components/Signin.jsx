@@ -55,17 +55,17 @@ export default function Signin() {
             <Container>
                 <Row>
                     <Col style={{ paddingLeft: 0, paddingRight: 0 }}>
-                        <h2>Sign in</h2>
+                        <h2>Вход</h2>
                     </Col>
                     <Col style={{ paddingLeft: 0, paddingRight: 0 }}>
                         <p ref={resultTextArea}>{resultText}</p>
                     </Col>
                 </Row>
             </Container>
-            <Input text="Login" type="text" ref={loginInput}/>
-            <Input text="Password" type="password" ref={passwordInput}/>
-            <Button variant='light' size='sm' onClick={signInClick}>Sign in</Button>
-            <Button variant='light' size='sm' onClick={signUpClick}>Sign up</Button>
+            <Input text="Логин" type="text" ref={loginInput}/>
+            <Input text="Пароль" type="password" ref={passwordInput}/>
+            <Button variant='light' size='sm' onClick={signInClick}>Войти</Button>
+            <Button variant='light' size='sm' onClick={signUpClick}>Зарегистироваться</Button>
         </Stack>
     );
 }

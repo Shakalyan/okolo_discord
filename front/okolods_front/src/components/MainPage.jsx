@@ -400,12 +400,12 @@ export default function MainPage() {
                         className="mb-3 tab_text_color"
                         fill
                     >
-                        <Tab eventKey="messages" title="Messages">
+                        <Tab eventKey="messages" title="Чаты">
                             <MsList list={chatList.get()}
                                     newTabClick={() => renderedComponent.set(RenderedComponent.NewChatForm).update()}
                                     tabClick={chatTabClick}/>
                         </Tab>
-                        <Tab eventKey="servers" title="Servers">
+                        <Tab eventKey="servers" title="Серверы">
                             <MsList list={serverList.get()}
                                     newTabClick={() => renderedComponent.set(RenderedComponent.NewServerForm).update()}
                                     tabClick={serverTabClick}/>

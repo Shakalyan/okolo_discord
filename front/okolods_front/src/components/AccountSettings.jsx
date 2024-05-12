@@ -27,7 +27,7 @@ export default function AccountSettings(props) {
             <Stack gap={3}>
                 <Avatar file={avatar.get()} width="300px" height="300px" />
                 <input ref={inputRef} type="file" accept="image/*" id="file" onChange={avatarOnChange}/>
-                <Button variant="dark" onClick={onSaveClick}>Save</Button>
+                <Button variant="dark" onClick={onSaveClick}>Сохранить</Button>
             </Stack>
             
         </div>
