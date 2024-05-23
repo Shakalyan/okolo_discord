@@ -1,0 +1,106 @@
+swagger: "2.0"
+info:
+  title: HTTP API
+  description: Описание API.
+  version: 1.0.0
+schemes:
+  - http
+paths:
+  /signup:
+    post:
+      summary: Регистрация аккаунта.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+  /signin:
+    post:
+      summary: Аутентификация.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+  /account:
+    get:
+      summary:  Получить информацию об аккаунте.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+  /chats:
+    get:
+      summary: Получить информацию о чатах, учатником которых является пользователь.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+  /account/echo:
+    get:
+      summary: Получить информацию о данном аккаунте.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+  /messages:
+    get:
+      summary: Получить сообщения, принадлежащие чату.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+  /servers:
+    get:
+      summary: Получить информацию о серверах, учатником которых является пользователь.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+  /server:
+    get:
+      summary: Получить информацию о сервере.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+  /server/messages:
+    get:
+      summary: Получить сообщения текстового канала.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+  /account/avatar:
+    get:
+      summary: Получить аватар пользователя.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+    post:
+      summary: Изменить аватар пользователя.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK

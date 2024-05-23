@@ -18,6 +18,7 @@ sock = Sock(app)
 
 sessions = {}
 rooms = {}
+swaggerDoc = ""
 
 
 with open(".keys/id_rsa", 'r') as f:
@@ -26,6 +27,8 @@ with open(".keys/id_rsa", 'r') as f:
 with open(".keys/id_rsa.pub", 'r') as f:
     pub_key = serialization.load_ssh_public_key(f.read().encode())
 
+with open("rest.yaml", 'r') as f:
+    swaggerDoc = f.read()
 
 class WsMessage:
     def __init__(self, json):
@@ -85,6 +88,14 @@ def getToken():
 @app.route('/ping')
 def ping():
     return 'pong'
+
+
+@app.route('/swagger', methods=['GET'])
+def swagger():
+    doc = ""
+    with open("rest.yaml", 'r') as f:
+        doc = f.read()
+    return doc
 
 
 @app.route('/signup', methods=['POST'])

@@ -101,6 +101,10 @@ export function api_getAvatar(accountId) {
     return sendQuery(url, 'GET');
 }
 
+export function api_getSwaggerDoc() {
+    return sendQuery(makeUrl('/swagger'), 'GET');
+}
+
 export function wsapi_createChat(ws, name, isGroup, members) {
     let msg = {
         type: 'chat',

@@ -12,3 +12,33 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/db_init.sql
     ports:
       - '5432:5432'
+
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    container_name: 'grafana'
+    ports:
+      - '3000:3000'
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+
+  postgres_exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    container_name: postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: 'postgresql://shakalyan:123@od_database:5432/od_database?sslmode=disable'
+    ports:
+      - '9187:9187'
+    command:
+      - --log.level=debug
+    depends_on:
+      - database
+      - prometheus
+
