@@ -307,6 +307,11 @@ export default function MainPage() {
                 }
             }
             else if (msg.type == 'webrtc') {
+                // console.log(peerConnections.current);
+                // for (let i = 0; i < peerConnections.current.length; ++i) {
+                //     console.log(peerConnections.current[i].peerConnection.connectionState);
+                // }
+
                 if (msg.subtype == 'startCall') {
                     let peerConnection = createPeerConnection(socket, msg.data.roomId, msg.data.senderId);
                     peerConnection.createOffer().then(dsc => {
@@ -325,12 +330,17 @@ export default function MainPage() {
                     });
                 }
                 else if (msg.subtype == 'answer') {
+                    if (msg.data.receiverId != accountData.get().id)
+                        return
                     let peerConnection = peerConnections.current.find((pc) => pc.interlocutorId == msg.data.senderId).peerConnection;
                     peerConnection.setRemoteDescription(msg.data.dsc);
                 }
                 else if (msg.subtype == 'candidate') {
+                    if (msg.data.receiverId != accountData.get().id)
+                        return
                     let peerConnection = peerConnections.current.find((pc) => pc.interlocutorId == msg.data.senderId).peerConnection;
-                    peerConnection.addIceCandidate(msg.data.candidate);
+                    //if (peerConnection.remoteDescription)
+                        peerConnection.addIceCandidate(msg.data.candidate);
                 }
             }
         };

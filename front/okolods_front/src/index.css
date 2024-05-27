@@ -5,10 +5,10 @@
   --odbg-2: #242424; */
 }
 
-/* * {
+* {
   background-color: var(--odbg-1);
   color: white;
-} */
+}
 
 body {
   margin: 0;
